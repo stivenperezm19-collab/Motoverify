@@ -39,14 +39,16 @@ $defaultCats = [
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f8f9fc; color: #333; overflow-x: hidden; }
         
+        /* Topbar Global */
+        .topbar-global { height: 110px; background: #ffffff; border-bottom: 1px solid #eaeaea; position: fixed; top: 0; left: 0; right: 0; z-index: 1050; }
+        .topbar-logo { display: inline-flex; align-items: center; height: 100%; text-decoration: none; }
+        .topbar-logo img { max-height: 85px; width: auto; object-fit: contain; object-position: left center; margin-left: 5px; padding-right: 15px; }
+
+        .search-container { background: #ffffff; border: 1px solid #e0e0e0; border-radius: 12px; padding: 5px 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.02); }
+        .search-container input { border: none; outline: none; box-shadow: none; }
+        
         /* Sidebar */
-        .sidebar { width: 260px; background-color: #ffffff; border-right: 1px solid #eaeaea; position: fixed; top: 0; bottom: 0; left: 0; z-index: 1000; display: flex; flex-direction: column; }
-        .sidebar-brand { padding: 20px 24px; display: flex; align-items: center; gap: 10px; text-decoration: none; }
-        .sidebar-brand .logo-icon { position: relative; width: 40px; height: 35px; }
-        .sidebar-brand .logo-icon .fa-gear { font-size: 28px; color: #666; position: absolute; left: 0; top: 0; }
-        .sidebar-brand .logo-icon .fa-wrench { font-size: 18px; color: #111; position: absolute; left: 10px; top: 5px; transform: rotate(45deg); }
-        .sidebar-brand .logo-icon .fa-circle { font-size: 10px; color: #ff0000; position: absolute; left: 22px; top: 12px; }
-        .sidebar-brand .logo-text { font-size: 1.8rem; font-weight: 800; font-style: italic; letter-spacing: -1px; line-height: 1; }
+        .sidebar { width: 260px; background-color: #ffffff; border-right: 1px solid #eaeaea; position: fixed; top: 110px; bottom: 0; left: 0; z-index: 1000; display: flex; flex-direction: column; }
         
         .nav-item { display: flex; align-items: center; gap: 15px; padding: 12px 20px; color: #4b5563; font-weight: 600; font-size: 1.05rem; text-decoration: none; border-radius: 10px; transition: all 0.2s; margin: 0 16px 8px; }
         .nav-item i { font-size: 1.2rem; width: 20px; text-align: center; }
@@ -55,12 +57,7 @@ $defaultCats = [
         .nav-item.active::before { content: ''; position: absolute; left: -16px; top: 10%; height: 80%; width: 4px; background-color: #004ba8; border-radius: 0 4px 4px 0; }
         
         /* Main Content */
-        .main-content { margin-left: 260px; min-height: 100vh; display: flex; flex-direction: column; background-color: #f8f9fc; }
-        
-        /* Topbar */
-        .topbar { height: 80px; background-color: #ffffff; border-bottom: 1px solid #eaeaea; }
-        .search-container { background: #ffffff; border: 1px solid #e0e0e0; border-radius: 12px; padding: 5px 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.02); }
-        .search-container input { border: none; outline: none; box-shadow: none; }
+        .main-content { margin-left: 260px; margin-top: 110px; min-height: calc(100vh - 110px); display: flex; flex-direction: column; background-color: #f8f9fc; }
         
         /* Hero Banner */
         .hero-banner { background: linear-gradient(135deg, #0640aa 0%, #1e5abf 100%); color: white; position: relative; overflow: hidden; }
@@ -136,19 +133,30 @@ $defaultCats = [
 </head>
 <body>
 
-    <aside class="sidebar">
-        <a href="dashboard.php" class="sidebar-brand">
-            <div class="logo-icon">
-                <i class="fa-solid fa-gear"></i>
-                <i class="fa-solid fa-wrench"></i>
-                <i class="fa-solid fa-circle"></i>
-            </div>
-            <div class="logo-text">
-                <span style="color:#111">moto</span><span style="color:#004ba8">verify</span>
-            </div>
+    <header class="topbar-global px-4 d-flex align-items-center justify-content-between">
+        <a href="dashboard.php" class="topbar-logo text-decoration-none">
+            <img src="assets/logo_motoverify.png?v=<?php echo time(); ?>" alt="Motoverify">
         </a>
+        <div class="d-flex align-items-center gap-3">
+            <div class="search-container d-flex align-items-center" style="width: 400px;">
+                <input type="text" class="form-control" placeholder="Pulsar135/180/NS200">
+                <div class="vr mx-2"></div>
+                <span class="text-primary fw-semibold" style="cursor:pointer; white-space:nowrap;">
+                    Filtro <i class="fa-solid fa-chevron-down ms-1"></i>
+                </span>
+            </div>
+            <button class="btn btn-primary d-flex align-items-center justify-content-center" style="width: 45px; height: 45px; border-radius: 12px;">
+                <i class="fa-solid fa-camera fs-5"></i>
+            </button>
+            <a href="perfil.php" class="d-flex align-items-center justify-content-center bg-light text-secondary rounded-circle text-decoration-none" style="width: 45px; height: 45px; font-size: 1.2rem;">
+                <i class="fa-regular fa-user"></i>
+            </a>
+        </div>
+    </header>
 
-        <div class="px-3 mb-4 mt-2">
+    <aside class="sidebar">
+
+        <div class="px-3 mb-3 mt-3">
             <button class="btn btn-light w-100 d-flex align-items-center justify-content-center gap-2 fw-semibold border" style="border-radius: 12px; padding: 12px;" onclick="openCatModal('add')">
                 <i class="fa-solid fa-plus text-primary"></i> Nuevo
             </button>
@@ -180,26 +188,6 @@ $defaultCats = [
     </aside>
 
     <main class="main-content">
-        
-        <!-- Topbar -->
-        <header class="topbar px-4 d-flex align-items-center justify-content-between">
-            <div class="flex-grow-1"></div>
-            <div class="d-flex align-items-center gap-3">
-                <div class="search-container d-flex align-items-center me-3" style="width: 350px;">
-                    <input type="text" class="form-control" placeholder="Pulsar135/180/NS200">
-                    <div class="vr mx-2"></div>
-                    <span class="text-primary fw-semibold" style="cursor:pointer; white-space:nowrap;">
-                        Filtro <i class="fa-solid fa-chevron-down ms-1"></i>
-                    </span>
-                </div>
-                <button class="btn btn-primary d-flex align-items-center justify-content-center" style="width: 45px; height: 45px; border-radius: 12px;">
-                    <i class="fa-solid fa-camera fs-5"></i>
-                </button>
-                <a href="perfil.php" class="d-flex align-items-center justify-content-center bg-light text-secondary rounded-circle text-decoration-none" style="width: 45px; height: 45px; font-size: 1.2rem;">
-                    <i class="fa-regular fa-user"></i>
-                </a>
-            </div>
-        </header>
 
         <div class="p-4 flex-grow-1">
 
