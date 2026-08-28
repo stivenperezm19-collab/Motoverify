@@ -1,28 +1,38 @@
 <?php
+// Incluimos el archivo que nos permite conectarnos a la base de datos
 require_once '../config/database.php';
 
+// Intentamos obtener el "token" (un código de seguridad especial) que viene en la dirección web
 $token = $_GET['token'] ?? '';
+// Preparamos variables para guardar mensajes de error o de éxito
 $error = '';
 $success = '';
+// Esta variable nos dirá si el código de seguridad es válido o no
 $validToken = false;
+// Aquí guardaremos el correo del usuario si el código es correcto
 $user_email = '';
 
+// Si no nos enviaron ningún código de seguridad en la dirección web...
 if (empty($token)) {
     $error = "Enlace de recuperación inválido o ausente.";
 } else {
-    // Validar token
-    // Como es temporal, asumimos que token expira o es de un solo uso.
+    // Si hay un código, vamos a buscar en la base de datos a quién le pertenece
+    // Buscamos el correo de la persona que pidió cambiar la contraseña usando este código
     $query = "SELECT email FROM password_resets WHERE token = ? ORDER BY created_at DESC LIMIT 1";
     $stmt = $conn->prepare($query);
     if ($stmt) {
-        $stmt->bind_param("s", $token);
-        $stmt->execute();
+        $stmt->bind_param("s", $token); // Ponemos el código en la búsqueda
+        $stmt->execute(); // Ejecutamos la búsqueda
         $result = $stmt->get_result();
+        // Si encontramos exactamente 1 resultado, significa que el código existe y es válido
         if ($result->num_rows === 1) {
             $validToken = true;
+            // Obtenemos la información de la base de datos
             $row = $result->fetch_assoc();
+            // Guardamos el correo electrónico de la persona
             $user_email = $row['email'];
         } else {
+            // Si no encontramos el código, ya expiró o es falso
             $error = "El enlace de recuperación es inválido o ya expiró.";
         }
         $stmt->close();
@@ -31,41 +41,43 @@ if (empty($token)) {
     }
 }
 
-// Si se envía el formulario
+// Si la persona presionó el botón de "Actualizar contraseña" (enviando el formulario) y además el código es válido...
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $validToken) {
+    // Obtenemos la nueva contraseña y su confirmación desde el formulario
     $new_password = $_POST['new_password'] ?? '';
     $confirm_password = $_POST['confirm_password'] ?? '';
 
+    // Verificamos que la persona haya llenado ambos campos
     if (empty($new_password) || empty($confirm_password)) {
         $error = "Por favor, completa ambos campos.";
+    // Verificamos que las dos contraseñas escritas sean exactamente iguales
     } else if ($new_password !== $confirm_password) {
         $error = "Las contraseñas no coinciden.";
+    // Verificamos que la contraseña tenga un tamaño seguro (al menos 6 letras/números)
     } else if (strlen($new_password) < 6) {
         $error = "La contraseña debe tener al menos 6 caracteres.";
     } else {
-        // Actualizar la contraseña en la base de datos
-        // NOTA: Para producción usar password_hash($new_password, PASSWORD_DEFAULT);
-        // Usaremos hash si el sistema lo soporta, o texto plano según la configuración actual del usuario
-        // Aquí asumiré que debemos hashearla idealmente, pero para ser compatible con la BD existente:
+        // Si todo está bien, transformamos la contraseña en un código secreto ilegible (para que nadie la pueda robar)
         $hashed_password = password_hash($new_password, PASSWORD_DEFAULT);
         
-        $updateQuery = "UPDATE usuarios SET password = ? WHERE email = ?";
+        // Preparamos la orden para guardar esta nueva contraseña secreta en el perfil del Administrador
+        $updateQuery = "UPDATE ADMINISTRADOR SET clave_hash = ? WHERE email = ?";
         $stmtUpdate = $conn->prepare($updateQuery);
-        // Si tu base de datos actual guarda contraseñas en texto plano, cambia $hashed_password por $new_password
-        // Dejaremos el plain text comentado: $stmtUpdate->bind_param("ss", $new_password, $user_email);
-        $stmtUpdate->bind_param("ss", $new_password, $user_email); // Usando raw password por compatibilidad con script anterior
-        
+        $stmtUpdate->bind_param("ss", $hashed_password, $user_email);
+        // Si la contraseña se guardó correctamente en la base de datos...
         if ($stmtUpdate->execute()) {
             $success = "Tu contraseña ha sido actualizada con éxito.";
             
-            // Invalidar el token para que no se use de nuevo
+            // Borramos el código de seguridad usado para que nadie más pueda usar este mismo enlace en el futuro
             $delQuery = "DELETE FROM password_resets WHERE email = ?";
             $stmtDel = $conn->prepare($delQuery);
             $stmtDel->bind_param("s", $user_email);
             $stmtDel->execute();
             
-            $validToken = false; // Ocultar formulario
+            // Ocultamos el formulario porque ya terminamos
+            $validToken = false; 
         } else {
+            // Si hubo un problema técnico al guardar la contraseña
             $error = "Hubo un error al actualizar la contraseña.";
         }
     }
