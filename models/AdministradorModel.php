@@ -33,7 +33,7 @@ class AdministradorModel {
     }
 
     // Esta función busca a un administrador usando su correo electrónico
-    public function getByEmail($email) {
+    public function getByEmail($mail) {
         // Preparamos la consulta buscando por email
         $query = "SELECT id_administrador as id, email, clave_hash as password FROM ADMINISTRADOR WHERE email = ?";
         if ($stmt = $this->conn->prepare($query)) {
