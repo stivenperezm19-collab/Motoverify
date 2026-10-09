@@ -158,6 +158,34 @@ class RepuestoModel {
         // Devolvemos el resultado (verdadero si se borró, falso si no)
         return $result;
     }
+
+    // Esta función obtiene todos los modelos de moto disponibles en las compatibilidades
+    public function getModelos() {
+        $query = "SELECT DISTINCT compatibilidades as modelo_moto FROM REPUESTO WHERE compatibilidades IS NOT NULL AND compatibilidades != '' ORDER BY compatibilidades ASC";
+        $result = $this->conn->query($query);
+        $modelos = [];
+        if ($result) {
+            while ($row = $result->fetch_assoc()) {
+                $modelos[] = $row;
+            }
+        }
+        return $modelos;
+    }
+
+    // Obtener repuestos con formato especial para el Punto de Venta (POS)
+    public function getForPos() {
+        $query = "SELECT r.id_repuesto, r.codigo_interno, r.nombre, r.precio, r.stock, m.nombre as marca 
+                  FROM REPUESTO r 
+                  LEFT JOIN MARCA m ON r.id_marca = m.id_marca 
+                  ORDER BY r.nombre ASC";
+        $result = $this->conn->query($query);
+        $repuestos = [];
+        if ($result) {
+            while ($row = $result->fetch_assoc()) {
+                $repuestos[] = $row;
+            }
+        }
+        return $repuestos;
+    }
 }
 ?>
-

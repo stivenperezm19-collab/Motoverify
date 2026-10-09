@@ -7,6 +7,14 @@ if (!isset($_SESSION['user_id']) || $_SESSION['rol'] !== 'Administrador') {
 }
 // Incluimos la configuración para conectarnos a la base de datos
 require_once '../../config/database.php';
+require_once '../../models/MarcaModel.php';
+require_once '../../models/CategoriaModel.php';
+require_once '../../models/RepuestoModel.php';
+
+$marcaModel = new MarcaModel($conn);
+$catModel = new CategoriaModel($conn);
+$repModel = new RepuestoModel($conn);
+
 
 // Preparamos listas vacías donde guardaremos las opciones para los filtros de búsqueda
 $marcas_filter = [];

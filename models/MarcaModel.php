@@ -70,6 +70,46 @@ class MarcaModel {
 
     // Esta función revisa si una marca ya tiene repuestos guardados con su nombre
     // (Útil para evitar borrar una marca si todavía hay repuestos que la usan)
+            public function getDashboardCards() {
+        $marcas_cards = [];
+        $query_marcas = "SELECT m.id_marca, m.nombre, COUNT(r.id_repuesto) as total_repuestos, i.ruta_archivo as logo
+                         FROM MARCA m
+                         LEFT JOIN REPUESTO r ON m.id_marca = r.id_marca
+                         LEFT JOIN MARCA_IMAGEN mi ON m.id_marca = mi.id_marca AND mi.imagen_principal = 1
+                         LEFT JOIN IMAGEN i ON mi.id_imagen = i.id_imagen
+                         GROUP BY m.id_marca, m.nombre, i.ruta_archivo
+                         ORDER BY total_repuestos DESC LIMIT 4";
+        $res = $this->conn->query($query_marcas);
+        if ($res) {
+            while ($row = $res->fetch_assoc()) { $marcas_cards[] = $row; }
+        }
+        return $marcas_cards;
+    }
+
+    public function getAll() {
+        $marcas = [];
+        $query = "SELECT id_marca as id, nombre FROM MARCA ORDER BY nombre";
+        $res = $this->conn->query($query);
+        if ($res) {
+            while ($row = $res->fetch_assoc()) { $marcas[] = $row; }
+        }
+        return $marcas;
+    }
+
+    public function getAllWithImages() {
+        $marcas = [];
+        $query = "SELECT m.*, i.ruta_archivo as imagen_url 
+                  FROM MARCA m 
+                  LEFT JOIN MARCA_IMAGEN mi ON m.id_marca = mi.id_marca AND mi.imagen_principal = 1
+                  LEFT JOIN IMAGEN i ON mi.id_imagen = i.id_imagen 
+                  ORDER BY m.nombre ASC";
+        $res = $this->conn->query($query);
+        if ($res) {
+            while ($row = $res->fetch_assoc()) { $marcas[] = $row; }
+        }
+        return $marcas;
+    }
+
     public function hasRepuestos($id) {
         // Contamos cuántos repuestos pertenecen a esta marca
         $queryCheck = "SELECT COUNT(*) as total FROM REPUESTO WHERE id_marca = ?";

@@ -10,13 +10,7 @@ require_once '../../models/AdministradorModel.php';
 $adminModel = new AdministradorModel($conn);
 $usuarios = $adminModel->getAll();
 
-$roles = [];
-$resR = $conn->query("SELECT id_rol, nombre_rol FROM ROL ORDER BY nombre_rol");
-if ($resR) {
-    while ($row = $resR->fetch_assoc()) {
-        $roles[] = $row;
-    }
-}
+$roles = $adminModel->getRoles();
 ?>
 <!DOCTYPE html>
 <html lang="es">

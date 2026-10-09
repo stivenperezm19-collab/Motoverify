@@ -6,15 +6,22 @@ if (!isset($_SESSION['user_id']) || $_SESSION['rol'] !== 'Vendedor') {
     exit;
 }
 require_once '../../config/database.php';
+require_once '../../models/MarcaModel.php';
+require_once '../../models/CategoriaModel.php';
+require_once '../../models/RepuestoModel.php';
+
+$marcaModel = new MarcaModel($conn);
+$catModel = new CategoriaModel($conn);
+$repModel = new RepuestoModel($conn);
+
+require_once '../../models/RepuestoModel.php';
+
+$repModel = new RepuestoModel($conn);
+
 
 // Obtener catálogo para el buscador
 $repuestos = [];
-$res = $conn->query("SELECT r.id_repuesto, r.nombre, r.codigo_interno, r.precio, r.stock, m.nombre as marca FROM REPUESTO r LEFT JOIN MARCA m ON r.id_marca = m.id_marca WHERE r.stock > 0");
-if ($res) {
-    while ($row = $res->fetch_assoc()) {
-        $repuestos[] = $row;
-    }
-}
+$repuestos = $repModel->getForPos();
 ?>
 <!DOCTYPE html>
 <html lang="es">

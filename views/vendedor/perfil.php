@@ -7,6 +7,14 @@ if (!isset($_SESSION['user_id']) || $_SESSION['rol'] !== 'Vendedor') {
 }
 
 require_once '../../config/database.php';
+require_once '../../models/MarcaModel.php';
+require_once '../../models/CategoriaModel.php';
+require_once '../../models/RepuestoModel.php';
+
+$marcaModel = new MarcaModel($conn);
+$catModel = new CategoriaModel($conn);
+$repModel = new RepuestoModel($conn);
+
 require_once '../../models/AdministradorModel.php';
 
 $userId = $_SESSION['user_id'];

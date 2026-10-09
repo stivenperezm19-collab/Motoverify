@@ -7,38 +7,22 @@ if (!isset($_SESSION['user_id']) || $_SESSION['rol'] !== 'Vendedor') {
 }
 // Conectamos a la base de datos
 require_once '../../config/database.php';
+require_once '../../models/MarcaModel.php';
+require_once '../../models/CategoriaModel.php';
+require_once '../../models/RepuestoModel.php';
+
+$marcaModel = new MarcaModel($conn);
+$catModel = new CategoriaModel($conn);
+$repModel = new RepuestoModel($conn);
+
 
 // Creamos una lista vacía para guardar las marcas
-$marcas = [];
-try {
-    // Buscamos todas las marcas en la base de datos junto con su logo principal
-    $query = "SELECT m.*, i.ruta_archivo as imagen_url 
-              FROM MARCA m 
-              LEFT JOIN MARCA_IMAGEN mi ON m.id_marca = mi.id_marca AND mi.imagen_principal = 1
-              LEFT JOIN IMAGEN i ON mi.id_imagen = i.id_imagen 
-              ORDER BY m.nombre ASC";
-    $result = $conn->query($query);
-    if ($result) {
-        while ($row = $result->fetch_assoc()) {
-            $marcas[] = $row; // Agregamos cada marca encontrada a nuestra lista
-        }
-    }
-} catch (Exception $e) {}
+$marcas = $marcaModel->getAllWithImages();
 
 // --- DATOS PARA FILTROS DE BÚSQUEDA ---
-$marcas_filter = [];
-$cat_filter = [];
-$mod_filter = [];
-try {
-    $rM = $conn->query("SELECT id_marca as id, nombre FROM MARCA ORDER BY nombre");
-    if($rM) while($row = $rM->fetch_assoc()) $marcas_filter[] = $row;
-    
-    $rC = $conn->query("SELECT id_categoria as id, nombre FROM CATEGORIA ORDER BY nombre");
-    if($rC) while($row = $rC->fetch_assoc()) $cat_filter[] = $row;
-    
-    $rMo = $conn->query("SELECT DISTINCT compatibilidades as modelo_moto FROM REPUESTO WHERE compatibilidades != '' ORDER BY compatibilidades");
-    if($rMo) while($row = $rMo->fetch_assoc()) $mod_filter[] = $row;
-} catch (Exception $e) {}
+$marcas_filter = $marcaModel->getAll();
+$cat_filter = $catModel->getAll();
+$mod_filter = $repModel->getModelos();
 ?>
 <!DOCTYPE html>
 <html lang="es">

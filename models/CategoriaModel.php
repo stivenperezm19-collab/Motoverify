@@ -32,6 +32,30 @@ class CategoriaModel {
     }
 
     // Esta función actualiza (modifica) los datos de una categoría que ya existe
+        public function getAll() {
+        $categorias = [];
+        $query = "SELECT id_categoria as id, nombre FROM CATEGORIA ORDER BY nombre ASC";
+        $res = $this->conn->query($query);
+        if ($res) {
+            while ($row = $res->fetch_assoc()) { $categorias[] = $row; }
+        }
+        return $categorias;
+    }
+
+    public function getAllWithCount() {
+        $categorias = [];
+        $query = "SELECT c.id_categoria, c.nombre, COUNT(r.id_repuesto) as total 
+                  FROM CATEGORIA c 
+                  LEFT JOIN REPUESTO r ON c.id_categoria = r.id_categoria 
+                  GROUP BY c.id_categoria, c.nombre 
+                  ORDER BY c.nombre";
+        $res = $this->conn->query($query);
+        if ($res) {
+            while ($row = $res->fetch_assoc()) { $categorias[] = $row; }
+        }
+        return $categorias;
+    }
+
     public function update($id, $data) {
         // Preparamos la orden para cambiar el nombre y la descripción de la categoría indicada
         $query = "UPDATE CATEGORIA SET nombre = ?, descripcion = ? WHERE id_categoria = ?";

@@ -7,6 +7,14 @@ if (!isset($_SESSION['user_id']) || $_SESSION['rol'] !== 'Administrador') {
 }
 // Conectamos a la base de datos
 require_once '../../config/database.php';
+require_once '../../models/CategoriaModel.php';
+require_once '../../models/MarcaModel.php';
+require_once '../../models/RepuestoModel.php';
+
+$catModel = new CategoriaModel($conn);
+$marcaModel = new MarcaModel($conn);
+$repModel = new RepuestoModel($conn);
+
 
 // Creamos una lista vacía para guardar las categorías
 $categorias = [];
@@ -40,22 +48,9 @@ $defaultCats = [
 ];
 
 // Preparamos listas para los filtros de búsqueda en la barra superior
-$marcas_filter = [];
-$cat_filter = [];
-$mod_filter = [];
-try {
-    // Obtenemos todas las marcas
-    $rM = $conn->query("SELECT id_marca as id, nombre FROM MARCA ORDER BY nombre");
-    if($rM) while($row = $rM->fetch_assoc()) $marcas_filter[] = $row;
-    
-    // Obtenemos todas las categorías
-    $rC = $conn->query("SELECT id_categoria as id, nombre FROM CATEGORIA ORDER BY nombre");
-    if($rC) while($row = $rC->fetch_assoc()) $cat_filter[] = $row;
-    
-    // Obtenemos los modelos de moto disponibles
-    $rMo = $conn->query("SELECT DISTINCT compatibilidades as modelo_moto FROM REPUESTO WHERE compatibilidades != '' ORDER BY compatibilidades");
-    if($rMo) while($row = $rMo->fetch_assoc()) $mod_filter[] = $row;
-} catch (Exception $e) {}
+$marcas_filter = $marcaModel->getAll();
+$cat_filter = $catModel->getAll();
+$mod_filter = $repModel->getModelos();
 ?>
 <!DOCTYPE html>
 <html lang="es">

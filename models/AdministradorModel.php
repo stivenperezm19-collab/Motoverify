@@ -113,6 +113,16 @@ class AdministradorModel {
     }
 
     // Crear un usuario nuevo
+        public function getRoles() {
+        $roles = [];
+        $query = "SELECT id_rol, nombre_rol FROM ROL ORDER BY nombre_rol";
+        $res = $this->conn->query($query);
+        if ($res) {
+            while ($row = $res->fetch_assoc()) { $roles[] = $row; }
+        }
+        return $roles;
+    }
+
     public function create($nombre, $email, $passwordHash, $id_rol) {
         $query = "INSERT INTO ADMINISTRADOR (usuario, email, clave_hash, id_rol, estado) VALUES (?, ?, ?, ?, 'Activo')";
         if ($stmt = $this->conn->prepare($query)) {

@@ -7,41 +7,27 @@ if (!isset($_SESSION['user_id']) || $_SESSION['rol'] !== 'Vendedor') {
 }
 // Conectamos a la base de datos
 require_once '../../config/database.php';
+require_once '../../models/MarcaModel.php';
+require_once '../../models/CategoriaModel.php';
+require_once '../../models/RepuestoModel.php';
+
+$marcaModel = new MarcaModel($conn);
+$catModel = new CategoriaModel($conn);
+$repModel = new RepuestoModel($conn);
+
 
 // --- OBTENER DATOS PARA LOS MENÚS DESPLEGABLES ---
 // 1. Buscamos todas las marcas disponibles para poder seleccionarlas al crear un repuesto
-$marcas = [];
-try {
-    $resMarcas = $conn->query("SELECT id_marca, nombre FROM MARCA ORDER BY nombre ASC");
-    if ($resMarcas) {
-        while ($m = $resMarcas->fetch_assoc()) {
-            $marcas[] = $m;
-        }
-    }
-} catch (Exception $e) {}
+$marcas = $marcaModel->getAll();
 
 // 2. Buscamos todas las categorías disponibles para poder seleccionarlas al crear un repuesto
-$categorias = [];
-try {
-    $resCat = $conn->query("SELECT id_categoria, nombre FROM CATEGORIA ORDER BY nombre ASC");
-    if ($resCat) {
-        while ($c = $resCat->fetch_assoc()) {
-            $categorias[] = $c;
-        }
-    }
-} catch (Exception $e) {}
+$categorias = $catModel->getAll();
 
 // --- OBTENER DATOS PARA LOS FILTROS DE BÚSQUEDA ---
 // Estas listas sirven para llenar las opciones del menú "Filtro" en la barra de arriba
-$marcas_filter = [];
-$cat_filter = [];
-try {
-    $rM = $conn->query("SELECT id_marca as id, nombre FROM MARCA ORDER BY nombre");
-    if($rM) while($row = $rM->fetch_assoc()) $marcas_filter[] = $row;
-    
-    $rC = $conn->query("SELECT id_categoria as id, nombre FROM CATEGORIA ORDER BY nombre");
-    if($rC) while($row = $rC->fetch_assoc()) $cat_filter[] = $row;
-} catch (Exception $e) {}
+$marcas_filter = $marcas;
+$cat_filter = $categorias;
+$mod_filter = $repModel->getModelos();
 
 // --- BUSCAR Y FILTRAR LOS REPUESTOS A MOSTRAR ---
 $repuestos = [];
