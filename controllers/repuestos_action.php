@@ -32,6 +32,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $compatibilidades = trim($_POST['compatibilidades'] ?? '');
         $observaciones = trim($_POST['observaciones'] ?? '');
         $estado = trim($_POST['estado'] ?? 'ACTIVO'); // Si no dicen el estado, por defecto es ACTIVO
+        $precio = isset($_POST['precio']) ? floatval($_POST['precio']) : 0.00;
+        $stock = isset($_POST['stock']) ? intval($_POST['stock']) : 0;
         $id = intval($_POST['id'] ?? intval($_POST['id_repuesto'] ?? 0)); // El ID del repuesto (solo para editar)
         
         // --- 1. Validación de datos obligatorios ---
@@ -70,7 +72,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'caracteristicas' => $caracteristicas,
             'compatibilidades' => $compatibilidades,
             'observaciones' => $observaciones,
-            'estado' => $estado
+            'estado' => $estado,
+            'precio' => $precio,
+            'stock' => $stock
         ];
 
         // --- SI ES UN REPUESTO NUEVO (ADD) ---

@@ -64,13 +64,13 @@ class RepuestoModel {
     // Esta función sirve para guardar un repuesto nuevo en la base de datos
     public function create($data) {
         // Preparamos la orden para insertar (guardar) todos los datos del repuesto
-        $query = "INSERT INTO REPUESTO (codigo_interno, codigo_barras, nombre, descripcion, referencia_fabricante, id_marca, id_categoria, caracteristicas, compatibilidades, observaciones, estado) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        $query = "INSERT INTO REPUESTO (codigo_interno, codigo_barras, nombre, descripcion, referencia_fabricante, id_marca, id_categoria, caracteristicas, compatibilidades, observaciones, estado, precio, stock) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         $stmt = $this->conn->prepare($query);
         // Si hay un error al preparar, nos detenemos aquí y devolvemos falso
         if (!$stmt) return false;
         
         // Emparejamos los datos que nos enviaron con cada signo de interrogación (?) de la consulta
-        $stmt->bind_param("sssssiissss", 
+        $stmt->bind_param("sssssiissssdi", 
             $data['codigo_interno'], 
             $data['codigo_barras'], 
             $data['nombre'], 
@@ -81,7 +81,9 @@ class RepuestoModel {
             $data['caracteristicas'],
             $data['compatibilidades'],
             $data['observaciones'], 
-            $data['estado']
+            $data['estado'],
+            $data['precio'],
+            $data['stock']
         );
         
         // Si logramos ejecutar la orden de guardado correctamente...
@@ -100,13 +102,13 @@ class RepuestoModel {
     // Esta función permite actualizar la información de un repuesto que ya existe
     public function update($id, $data) {
         // Preparamos la orden para modificar los datos del repuesto que tenga el ID indicado
-        $query = "UPDATE REPUESTO SET codigo_interno=?, codigo_barras=?, nombre=?, descripcion=?, referencia_fabricante=?, id_marca=?, id_categoria=?, caracteristicas=?, compatibilidades=?, observaciones=?, estado=? WHERE id_repuesto=?";
+        $query = "UPDATE REPUESTO SET codigo_interno=?, codigo_barras=?, nombre=?, descripcion=?, referencia_fabricante=?, id_marca=?, id_categoria=?, caracteristicas=?, compatibilidades=?, observaciones=?, estado=?, precio=?, stock=? WHERE id_repuesto=?";
         $stmt = $this->conn->prepare($query);
         // Si no se pudo preparar, devolvemos falso
         if (!$stmt) return false;
         
         // Colocamos los nuevos datos en su lugar correspondiente, incluyendo el ID al final
-        $stmt->bind_param("sssssiissssi", 
+        $stmt->bind_param("sssssiissssdii", 
             $data['codigo_interno'], 
             $data['codigo_barras'], 
             $data['nombre'], 
@@ -118,6 +120,8 @@ class RepuestoModel {
             $data['compatibilidades'],
             $data['observaciones'], 
             $data['estado'],
+            $data['precio'],
+            $data['stock'],
             $id
         );
         

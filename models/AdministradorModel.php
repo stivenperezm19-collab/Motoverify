@@ -12,7 +12,7 @@ class AdministradorModel {
     // Esta función busca a un administrador usando su número de identificación (ID)
     public function getById($id) {
         // Preparamos la consulta para buscar los datos del administrador
-        $query = "SELECT id_administrador as id, usuario as nombre, email, clave_hash as password FROM ADMINISTRADOR WHERE id_administrador = ?";
+        $query = "SELECT a.id_administrador as id, a.usuario as nombre, a.email, a.clave_hash as password, r.nombre_rol as rol FROM ADMINISTRADOR a LEFT JOIN ROL r ON a.id_rol = r.id_rol WHERE a.id_administrador = ?";
         if ($stmt = $this->conn->prepare($query)) {
             // Reemplazamos el '?' con el ID que estamos buscando
             $stmt->bind_param("i", $id);
@@ -33,9 +33,9 @@ class AdministradorModel {
     }
 
     // Esta función busca a un administrador usando su correo electrónico
-    public function getByEmail($mail) {
+    public function getByEmail($email) {
         // Preparamos la consulta buscando por email
-        $query = "SELECT id_administrador as id, email, clave_hash as password FROM ADMINISTRADOR WHERE email = ?";
+        $query = "SELECT a.id_administrador as id, a.email, a.clave_hash as password, r.nombre_rol as rol FROM ADMINISTRADOR a LEFT JOIN ROL r ON a.id_rol = r.id_rol WHERE a.email = ?";
         if ($stmt = $this->conn->prepare($query)) {
             // Reemplazamos el '?' con el correo
             $stmt->bind_param("s", $email);
@@ -56,7 +56,7 @@ class AdministradorModel {
     // (Muy útil para la pantalla de inicio de sesión)
     public function getByUserOrEmail($username) {
         // Buscamos donde el email o el usuario sean iguales a lo que el usuario escribió
-        $query = "SELECT id_administrador as id, email, usuario, clave_hash as password FROM ADMINISTRADOR WHERE email = ? OR usuario = ?";
+        $query = "SELECT a.id_administrador as id, a.email, a.usuario, a.clave_hash as password, r.nombre_rol as rol FROM ADMINISTRADOR a LEFT JOIN ROL r ON a.id_rol = r.id_rol WHERE a.email = ? OR a.usuario = ?";
         if ($stmt = $this->conn->prepare($query)) {
             // Reemplazamos ambos '?' con el texto ingresado
             $stmt->bind_param("ss", $username, $username);

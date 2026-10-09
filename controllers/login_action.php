@@ -34,9 +34,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // Si la contraseña es correcta, le damos su "gafete" virtual guardando sus datos en la sesión
                 $_SESSION['user_id'] = $user['id'];
                 $_SESSION['email'] = $user['email'];
+                $_SESSION['rol'] = $user['rol'] ?? 'Administrador';
                 
-                // Le decimos a la página que todo está bien y que lo envíe al panel principal (dashboard)
-                echo json_encode(['status' => 'success', 'redirect' => '../views/admin/dashboard.php']);
+                $redirect = '../views/admin/dashboard.php';
+                if ($_SESSION['rol'] === 'Vendedor') {
+                    $redirect = '../views/admin/ventas.php';
+                }
+                
+                // Le decimos a la página que todo está bien y que lo envíe a su panel correspondiente
+                echo json_encode(['status' => 'success', 'redirect' => $redirect]);
                 exit;
             } else {
                 // Si la persona existe pero la contraseña está mal
