@@ -1,6 +1,10 @@
 <?php
 // Iniciamos la sesión para poder recordar quién es el usuario que entró al sistema
 session_start();
+if (!isset($_SESSION['user_id']) || $_SESSION['rol'] !== 'Administrador') {
+    header('Location: ../../index.php');
+    exit;
+}
 // Incluimos la configuración para conectarnos a la base de datos
 require_once '../../config/database.php';
 
@@ -50,7 +54,7 @@ try {
     }
     
     // 5. Buscamos todos los modelos de moto que existan para poder filtrar por modelo
-    $rMo = $conn->query("SELECT DISTINCT modelo_moto FROM repuesto_compatibilidad WHERE modelo_moto != '' ORDER BY modelo_moto");
+    $rMo = $conn->query("SELECT DISTINCT compatibilidades as modelo_moto FROM REPUESTO WHERE compatibilidades != '' ORDER BY compatibilidades");
     if($rMo) while($row = $rMo->fetch_assoc()) $mod_filter[] = $row;
 } catch (Exception $e) {
     // Si algo sale mal al buscar en la base de datos, lo ignoramos por ahora
@@ -183,41 +187,7 @@ if (!isset($_SESSION['user_id'])) {
     </header>
 
     <!-- ===== SIDEBAR (debajo del topbar) ===== -->
-    <aside class="sidebar">
-        <div class="px-3 mb-3 mt-3 dropdown">
-            <button class="btn btn-light w-100 d-flex align-items-center justify-content-center gap-2 fw-semibold border" style="border-radius: 12px; padding: 12px;" data-bs-toggle="dropdown" aria-expanded="false">
-                <i class="fa-solid fa-plus text-primary"></i> Nuevo
-            </button>
-            <ul class="dropdown-menu w-100 shadow-sm border-0" style="border-radius: 10px;">
-                <li><a class="dropdown-item py-2" href="repuestos.php"><i class="fa-solid fa-pen-to-square me-2 text-primary"></i>Crear Manualmente</a></li>
-                <li><a class="dropdown-item py-2" href="repuestos.php?ai_import=true"><i class="fa-solid fa-wand-magic-sparkles me-2 text-success"></i>Importación con IA</a></li>
-            </ul>
-        </div>
-
-        <nav class="flex-grow-1">
-            <a href="dashboard.php" class="nav-item active">
-                <i class="fa-solid fa-house"></i> Inicio
-            </a>
-            <a href="marcas.php" class="nav-item">
-                <i class="fa-regular fa-star"></i> Marcas
-            </a>
-            <a href="repuestos.php" class="nav-item">
-                <i class="fa-solid fa-puzzle-piece"></i> Repuestos
-            </a>
-            <a href="catalogo.php" class="nav-item">
-                <i class="fa-solid fa-book"></i> Catálogo
-            </a>
-        </nav>
-
-        <div class="mt-auto border-top pt-3 pb-3">
-            <a href="#" class="nav-item">
-                <i class="fa-regular fa-circle-question"></i> Ayuda
-            </a>
-            <a href="perfil.php" class="nav-item">
-                <i class="fa-solid fa-gear"></i> Configuración
-            </a>
-        </div>
-    </aside>
+    <?php require_once 'sidebar.php'; ?>
 
     <!-- ===== MAIN CONTENT ===== -->
     <main class="main-content">
@@ -279,6 +249,10 @@ if (!isset($_SESSION['user_id'])) {
                                         <?php echo htmlspecialchars($rep['nombre']); ?>
                                     </div>
                                     <div class="part-model"><?php echo htmlspecialchars($rep['compatibilidades'] ?? ''); ?></div>
+                                    <div class="mt-2 d-flex gap-2">
+                                        <span class="badge bg-success" style="font-size: 0.85rem;">$<?php echo number_format($rep['precio'] ?? 0, 2); ?></span>
+                                        <span class="badge <?php echo ($rep['stock'] ?? 0) > 0 ? 'bg-primary' : 'bg-danger'; ?>" style="font-size: 0.85rem;">Stock: <?php echo htmlspecialchars($rep['stock'] ?? 0); ?></span>
+                                    </div>
                                 </div>
                                 <?php if (!empty($rep['imagen_url'])): ?>
                                     <img src="../../<?php echo htmlspecialchars($rep['imagen_url']); ?>" alt="Repuesto" class="part-img" style="object-fit: cover;">

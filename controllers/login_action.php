@@ -28,6 +28,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // Si encontramos a la persona...
         if ($user) {
+            // Verificamos si la cuenta está inactiva
+            if (isset($user['estado']) && $user['estado'] === 'Inactivo') {
+                echo json_encode(['status' => 'error', 'message' => 'Tu cuenta ha sido desactivada. Contacta al administrador.']);
+                exit;
+            }
+
             // Comparamos la contraseña que escribieron con la que tenemos guardada (encriptada)
             // (La segunda parte "===" es solo un respaldo por si la contraseña no estaba encriptada)
             if (password_verify($password, $user['password']) || $password === $user['password']) {
@@ -38,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 
                 $redirect = '../views/admin/dashboard.php';
                 if ($_SESSION['rol'] === 'Vendedor') {
-                    $redirect = '../views/admin/ventas.php';
+                    $redirect = '../views/vendedor/dashboard.php';
                 }
                 
                 // Le decimos a la página que todo está bien y que lo envíe a su panel correspondiente

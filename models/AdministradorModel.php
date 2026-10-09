@@ -12,7 +12,7 @@ class AdministradorModel {
     // Esta función busca a un administrador usando su número de identificación (ID)
     public function getById($id) {
         // Preparamos la consulta para buscar los datos del administrador
-        $query = "SELECT a.id_administrador as id, a.usuario as nombre, a.email, a.clave_hash as password, r.nombre_rol as rol FROM ADMINISTRADOR a LEFT JOIN ROL r ON a.id_rol = r.id_rol WHERE a.id_administrador = ?";
+        $query = "SELECT a.id_administrador as id, a.usuario as nombre, a.email, a.clave_hash as password, r.nombre_rol as rol, a.estado, a.id_rol FROM ADMINISTRADOR a LEFT JOIN ROL r ON a.id_rol = r.id_rol WHERE a.id_administrador = ?";
         if ($stmt = $this->conn->prepare($query)) {
             // Reemplazamos el '?' con el ID que estamos buscando
             $stmt->bind_param("i", $id);
@@ -35,7 +35,7 @@ class AdministradorModel {
     // Esta función busca a un administrador usando su correo electrónico
     public function getByEmail($email) {
         // Preparamos la consulta buscando por email
-        $query = "SELECT a.id_administrador as id, a.email, a.clave_hash as password, r.nombre_rol as rol FROM ADMINISTRADOR a LEFT JOIN ROL r ON a.id_rol = r.id_rol WHERE a.email = ?";
+        $query = "SELECT a.id_administrador as id, a.email, a.clave_hash as password, r.nombre_rol as rol, a.estado FROM ADMINISTRADOR a LEFT JOIN ROL r ON a.id_rol = r.id_rol WHERE a.email = ?";
         if ($stmt = $this->conn->prepare($query)) {
             // Reemplazamos el '?' con el correo
             $stmt->bind_param("s", $email);
@@ -56,7 +56,7 @@ class AdministradorModel {
     // (Muy útil para la pantalla de inicio de sesión)
     public function getByUserOrEmail($username) {
         // Buscamos donde el email o el usuario sean iguales a lo que el usuario escribió
-        $query = "SELECT a.id_administrador as id, a.email, a.usuario, a.clave_hash as password, r.nombre_rol as rol FROM ADMINISTRADOR a LEFT JOIN ROL r ON a.id_rol = r.id_rol WHERE a.email = ? OR a.usuario = ?";
+        $query = "SELECT a.id_administrador as id, a.email, a.usuario, a.clave_hash as password, r.nombre_rol as rol, a.estado FROM ADMINISTRADOR a LEFT JOIN ROL r ON a.id_rol = r.id_rol WHERE a.email = ? OR a.usuario = ?";
         if ($stmt = $this->conn->prepare($query)) {
             // Reemplazamos ambos '?' con el texto ingresado
             $stmt->bind_param("ss", $username, $username);
@@ -94,6 +94,78 @@ class AdministradorModel {
         }
         // Si algo sale mal, devolvemos falso
         return false;
+    }
+
+    // Listar todos los usuarios
+    public function getAll() {
+        $query = "SELECT a.id_administrador as id, a.usuario as nombre, a.email, r.nombre_rol as rol, a.estado, a.id_rol 
+                  FROM ADMINISTRADOR a 
+                  LEFT JOIN ROL r ON a.id_rol = r.id_rol 
+                  ORDER BY a.id_administrador DESC";
+        $result = $this->conn->query($query);
+        $usuarios = [];
+        if ($result) {
+            while ($row = $result->fetch_assoc()) {
+                $usuarios[] = $row;
+            }
+        }
+        return $usuarios;
+    }
+
+    // Crear un usuario nuevo
+    public function create($nombre, $email, $passwordHash, $id_rol) {
+        $query = "INSERT INTO ADMINISTRADOR (usuario, email, clave_hash, id_rol, estado) VALUES (?, ?, ?, ?, 'Activo')";
+        if ($stmt = $this->conn->prepare($query)) {
+            $stmt->bind_param("sssi", $nombre, $email, $passwordHash, $id_rol);
+            $result = $stmt->execute();
+            $stmt->close();
+            return $result;
+        }
+        return false;
+    }
+
+    // Actualizar usuario desde el panel de Gestión de Usuarios
+    public function updateUserAdmin($id, $nombre, $email, $id_rol, $passwordHash = null) {
+        if ($passwordHash) {
+            $query = "UPDATE ADMINISTRADOR SET usuario = ?, email = ?, id_rol = ?, clave_hash = ?, fecha_actualizacion = CURRENT_TIMESTAMP WHERE id_administrador = ?";
+            if ($stmt = $this->conn->prepare($query)) {
+                $stmt->bind_param("ssisi", $nombre, $email, $id_rol, $passwordHash, $id);
+                $result = $stmt->execute();
+                $stmt->close();
+                return $result;
+            }
+        } else {
+            $query = "UPDATE ADMINISTRADOR SET usuario = ?, email = ?, id_rol = ?, fecha_actualizacion = CURRENT_TIMESTAMP WHERE id_administrador = ?";
+            if ($stmt = $this->conn->prepare($query)) {
+                $stmt->bind_param("ssii", $nombre, $email, $id_rol, $id);
+                $result = $stmt->execute();
+                $stmt->close();
+                return $result;
+            }
+        }
+        return false;
+    }
+
+    // Cambiar estado (Activar/Desactivar)
+    public function toggleStatus($id, $estado) {
+        $query = "UPDATE ADMINISTRADOR SET estado = ? WHERE id_administrador = ?";
+        if ($stmt = $this->conn->prepare($query)) {
+            $stmt->bind_param("si", $estado, $id);
+            $result = $stmt->execute();
+            $stmt->close();
+            return $result;
+        }
+        return false;
+    }
+
+    // Contar cuantos administradores activos quedan (para evitar dejar el sistema sin admins)
+    public function countActiveAdmins() {
+        $query = "SELECT COUNT(*) as total FROM ADMINISTRADOR a LEFT JOIN ROL r ON a.id_rol = r.id_rol WHERE r.nombre_rol = 'Administrador' AND a.estado = 'Activo'";
+        $result = $this->conn->query($query);
+        if ($result && $row = $result->fetch_assoc()) {
+            return $row['total'];
+        }
+        return 0;
     }
 }
 ?>

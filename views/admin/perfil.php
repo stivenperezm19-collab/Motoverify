@@ -2,14 +2,10 @@
 // Iniciamos la sesión para poder identificar al usuario (administrador)
 session_start();
 
-// Esta parte está comentada por ahora. Servirá para comprobar si el administrador
-// ya inició sesión. Si no lo ha hecho, lo mandará de vuelta a la página principal.
-/*
-if (!isset($_SESSION['user_id'])) {
-    header('Location: ../../public/index.php');
+if (!isset($_SESSION['user_id']) || $_SESSION['rol'] !== 'Administrador') {
+    header('Location: ../../index.php');
     exit;
 }
-*/
 
 // Conectamos a la base de datos
 require_once '../../config/database.php';
@@ -195,38 +191,7 @@ try {
         </div>
     </header>
 
-    <aside class="sidebar">
-
-        <div class="px-3 mb-3 mt-3 d-none">
-            <button class="btn btn-light w-100 d-flex align-items-center justify-content-center gap-2 fw-semibold border" style="border-radius: 12px; padding: 12px;">
-                <i class="fa-solid fa-plus text-primary"></i> Nuevo
-            </button>
-        </div>
-
-        <nav class="flex-grow-1">
-            <a href="dashboard.php" class="nav-item">
-                <i class="fa-solid fa-house"></i> Inicio
-            </a>
-            <a href="marcas.php" class="nav-item">
-                <i class="fa-regular fa-star"></i> Marcas
-            </a>
-            <a href="repuestos.php" class="nav-item">
-                <i class="fa-solid fa-puzzle-piece"></i> Repuestos
-            </a>
-            <a href="catalogo.php" class="nav-item">
-                <i class="fa-solid fa-book"></i> Catálogo
-            </a>
-        </nav>
-
-        <div class="mt-auto border-top pt-3 pb-3">
-            <a href="#" class="nav-item">
-                <i class="fa-regular fa-circle-question"></i> Ayuda
-            </a>
-            <a href="perfil.php" class="nav-item active">
-                <i class="fa-solid fa-gear"></i> Configuración
-            </a>
-        </div>
-    </aside>
+    <?php require_once 'sidebar.php'; ?>
 
     <main class="main-content">
 

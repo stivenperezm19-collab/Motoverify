@@ -43,7 +43,7 @@ CREATE TABLE IF NOT EXISTS VENTA (
     impuestos DECIMAL(10,2) NOT NULL,
     total DECIMAL(10,2) NOT NULL,
     estado ENUM('Completada', 'Cancelada') DEFAULT 'Completada',
-    FOREIGN KEY (id_vendedor) REFERENCES ADMINISTRADOR(id_administrador),
+    FOREIGN KEY (id_vendedor) REFERENCES ADMINISTRADOR(id),
     FOREIGN KEY (id_cliente) REFERENCES CLIENTE(id_cliente)
 );
 

@@ -610,13 +610,15 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
                 <img src="assets/images/logo_motoverify.png?v=<?php echo time(); ?>" alt="Motoverify" style="height: 95px; width: auto; object-fit: contain;">
             </a>
             
-            <div class="d-flex">
-                <a href="#" class="user-dropdown-btn" data-bs-toggle="modal" data-bs-target="#loginModal">
-                    <div class="user-avatar">
-                        <i class="fa-solid fa-user-gear"></i>
+            <div class="d-flex align-items-center">
+                <a href="#quienes-somos" class="fw-semibold text-dark me-4 text-decoration-none d-none d-md-inline" style="font-size: 1.05rem;">
+                    <i class="fa-solid fa-users me-1 text-primary"></i> Quiénes Somos
+                </a>
+                <a href="#" class="user-dropdown-btn" data-bs-toggle="modal" data-bs-target="#loginModal" style="text-decoration: none;">
+                    <div class="user-avatar" style="background-color: #004ba8; color: white;">
+                        <i class="fa-solid fa-user"></i>
                     </div>
-                    <span class="d-none d-sm-inline">Administrador</span>
-                    <i class="fa-solid fa-chevron-down ms-1 fs-6"></i>
+                    <span class="d-none d-sm-inline fw-semibold">Iniciar Sesión</span>
                 </a>
             </div>
         </div>
@@ -706,6 +708,76 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
                 </div>
             <?php endif; ?>
 
+        </div>
+    </section>
+
+    <!-- Quiénes Somos Section -->
+    <section id="quienes-somos" class="py-5 position-relative mt-5" style="background-color: #f8fbfd; border-top: 1px solid #eef2f6;">
+        <div class="container py-4">
+            <div class="row mb-5 justify-content-center text-center">
+                <div class="col-lg-8">
+                    <span class="badge bg-primary text-uppercase px-3 py-2 rounded-pill mb-3 shadow-sm" style="letter-spacing: 1px; font-weight: 700;">Nuestra Esencia</span>
+                    <h2 class="fw-bold mb-3" style="color: #0b1c3c; font-size: 2.5rem; letter-spacing: -0.5px;">Quiénes Somos</h2>
+                    <p class="text-muted" style="font-size: 1.15rem; line-height: 1.7;">
+                        Conoce más sobre nuestra filosofía de trabajo, nuestros grandes objetivos y el inmenso valor que le otorgamos a cada persona que forma parte de nuestra organización.
+                    </p>
+                </div>
+            </div>
+
+            <div class="row g-4 mb-5">
+                <div class="col-md-6">
+                    <div class="card h-100 border-0" style="border-radius: 20px; background: #ffffff; box-shadow: 0 15px 35px rgba(0,0,0,0.03); transition: all 0.4s ease; cursor: default;" onmouseover="this.style.transform='translateY(-10px)'; this.style.boxShadow='0 25px 45px rgba(0,0,0,0.06)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 15px 35px rgba(0,0,0,0.03)'">
+                        <div class="card-body p-5">
+                            <div class="d-flex align-items-center mb-4">
+                                <div class="me-4 d-flex align-items-center justify-content-center shadow-sm" style="width: 70px; height: 70px; border-radius: 18px; background: linear-gradient(135deg, #004ba8 0%, #3b82f6 100%); color: white;">
+                                    <i class="fa-solid fa-rocket" style="font-size: 2rem;"></i>
+                                </div>
+                                <h3 class="fw-bold mb-0" style="color: #0b1c3c; font-size: 1.8rem;">Nuestra Misión</h3>
+                            </div>
+                            <p class="text-secondary mb-0" style="font-size: 1.1rem; line-height: 1.8;">
+                                Proveer soluciones tecnológicas e innovadoras para la identificación, venta y verificación de repuestos de motocicletas, garantizando la mayor precisión, velocidad y confianza en cada transacción comercial en todo el país.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card h-100 border-0" style="border-radius: 20px; background: #ffffff; box-shadow: 0 15px 35px rgba(0,0,0,0.03); transition: all 0.4s ease; cursor: default;" onmouseover="this.style.transform='translateY(-10px)'; this.style.boxShadow='0 25px 45px rgba(0,0,0,0.06)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 15px 35px rgba(0,0,0,0.03)'">
+                        <div class="card-body p-5">
+                            <div class="d-flex align-items-center mb-4">
+                                <div class="me-4 d-flex align-items-center justify-content-center shadow-sm" style="width: 70px; height: 70px; border-radius: 18px; background: linear-gradient(135deg, #059669 0%, #10b981 100%); color: white;">
+                                    <i class="fa-solid fa-eye" style="font-size: 2rem;"></i>
+                                </div>
+                                <h3 class="fw-bold mb-0" style="color: #0b1c3c; font-size: 1.8rem;">Nuestra Visión</h3>
+                            </div>
+                            <p class="text-secondary mb-0" style="font-size: 1.1rem; line-height: 1.8;">
+                                Ser la plataforma líder a nivel nacional e internacional en la distribución y administración de repuestos de motocicletas, destacando por nuestra inteligencia artificial, excelencia en calidad de servicio y compromiso total con clientes y empleados.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-3">
+                <div class="col-12">
+                    <div class="card border-0 position-relative overflow-hidden" style="border-radius: 24px; background: linear-gradient(135deg, #003a8c 0%, #001a41 100%); box-shadow: 0 20px 40px rgba(0, 75, 168, 0.2);">
+                        <!-- Decoración de fondo -->
+                        <i class="fa-solid fa-users position-absolute" style="font-size: 25rem; color: rgba(255,255,255,0.03); right: -5%; top: -20%; pointer-events: none; transform: rotate(-15deg);"></i>
+                        <div class="position-absolute rounded-circle" style="width: 150px; height: 150px; background: rgba(255, 202, 40, 0.1); top: -50px; left: 10%; filter: blur(20px);"></div>
+                        
+                        <div class="card-body p-5 p-lg-5 text-center text-white position-relative" style="z-index: 1;">
+                            <div class="d-inline-flex align-items-center justify-content-center mb-4 shadow" style="width: 90px; height: 90px; background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); border-radius: 50%; border: 1px solid rgba(255,255,255,0.2);">
+                                <i class="fa-solid fa-handshake-angle" style="font-size: 3rem; color: #ffca28; filter: drop-shadow(0 0 10px rgba(255,202,40,0.5));"></i>
+                            </div>
+                            <h2 class="fw-bold mb-4" style="font-size: 2.5rem; text-shadow: 0 2px 4px rgba(0,0,0,0.3);">Lo más importante eres TÚ</h2>
+                            <p style="font-size: 1.2rem; line-height: 1.8; max-width: 900px; margin: 0 auto; color: rgba(255,255,255,0.9); font-weight: 300;">
+                                En <strong style="color: #ffca28;">Motoverify</strong> sabemos perfectamente que la tecnología no funciona sin el talento humano. 
+                                Como trabajador, <span class="fw-bold text-white">tú eres el motor fundamental</span> que impulsa nuestro crecimiento diario. Tu esfuerzo, tu compromiso y tu bienestar son nuestra mayor prioridad. 
+                                Juntos no solo construimos un excelente sistema, sino una familia laboral donde cada uno de tus aportes cuenta y es profundamente valorado.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </section>
 

@@ -1,6 +1,10 @@
 <?php
 // Iniciamos la sesión para recordar al administrador
 session_start();
+if (!isset($_SESSION['user_id']) || $_SESSION['rol'] !== 'Administrador') {
+    header('Location: ../../index.php');
+    exit;
+}
 // Conectamos a la base de datos
 require_once '../../config/database.php';
 
@@ -70,8 +74,8 @@ try {
         .main-content { margin-left: 260px; margin-top: 110px; min-height: calc(100vh - 110px); display: flex; flex-direction: column; background-color: #fbfbfd; }
         
         /* Hero Banner */
-        .hero-banner { background-color: #0640aa; color: white; position: relative; overflow: hidden; }
-        .hero-banner::before { content: ''; position: absolute; left: 0; top: 20%; height: 60%; width: 4px; background-color: #3b82f6; border-radius: 0 4px 4px 0; }
+        
+        
         .hero-gears { position: absolute; right: 5%; top: 50%; transform: translateY(-50%); color: rgba(255,255,255,0.1); }
         .hero-gears i { position: absolute; }
         
@@ -86,6 +90,10 @@ try {
         .btn-edit:hover { background: #eff6ff; }
         .btn-delete { border-color: #fecaca; background: white; color: #dc2626; }
         .btn-delete:hover { background: #fef2f2; }
+            /* Hero Banner */
+        .hero-banner { background: linear-gradient(135deg, #0640aa 0%, #1e5abf 100%); color: white; position: relative; overflow: hidden; }
+        .hero-banner::before { content: ''; position: absolute; left: 40px; top: 25%; height: 50%; width: 4px; background-color: #60a5fa; border-radius: 4px; }
+        .hero-gears { position: absolute; right: 30px; top: 50%; transform: translateY(-50%); pointer-events: none; }
     </style>
 </head>
 <body>
@@ -113,55 +121,27 @@ try {
     </header>
 
     <!-- Sidebar -->
-    <aside class="sidebar">
-        <div class="px-3 mb-3 mt-3">
-            <button class="btn btn-light w-100 d-flex align-items-center justify-content-center gap-2 fw-semibold border" style="border-radius: 12px; padding: 12px;" data-bs-toggle="modal" data-bs-target="#marcaModal" onclick="openModal('add')">
-                <i class="fa-solid fa-plus text-primary"></i> Nueva Marca
-            </button>
-        </div>
-
-        <nav class="flex-grow-1">
-            <a href="dashboard.php" class="nav-item">
-                <i class="fa-solid fa-house"></i> Inicio
-            </a>
-            <a href="marcas.php" class="nav-item active">
-                <i class="fa-regular fa-star"></i> Marcas
-            </a>
-            <a href="repuestos.php" class="nav-item">
-                <i class="fa-solid fa-puzzle-piece"></i> Repuestos
-            </a>
-            <a href="catalogo.php" class="nav-item">
-                <i class="fa-solid fa-book"></i> Catálogo
-            </a>
-        </nav>
-
-        <div class="mt-auto border-top pt-3 pb-3">
-            <a href="#" class="nav-item">
-                <i class="fa-regular fa-circle-question"></i> Ayuda
-            </a>
-            <a href="perfil.php" class="nav-item">
-                <i class="fa-solid fa-gear"></i> Configuración
-            </a>
-        </div>
-    </aside>
+    <?php require_once 'sidebar.php'; ?>
 
     <main class="main-content">
 
         <div class="p-4 flex-grow-1">
             
-            <div class="hero-banner rounded p-4 mb-4 d-flex align-items-center justify-content-between">
-                <div class="ps-3 position-relative" style="z-index: 2;">
-                    <h2 class="fw-bold mb-1">Marcas</h2>
-                    <p class="mb-0 opacity-75">Todas las marcas disponibles.</p>
+                        <!-- Hero Banner -->
+            <div class="hero-banner rounded-3 p-4 ps-5 mb-4 d-flex align-items-center justify-content-between">
+                <div class="position-relative" style="z-index: 2; padding-left: 15px;">
+                    <h2 class="fw-bold mb-2 d-flex align-items-center gap-3">
+                        <i class="fa-solid fa-star" style="font-size: 1.4rem; opacity: .8;"></i>
+                        Gestión de Marcas
+                    </h2>
+                    <p class="mb-0 opacity-75" style="font-size: 1rem;">Administra los fabricantes y marcas del catálogo.</p>
                 </div>
-                
-                <button class="btn btn-light text-primary fw-bold px-4 py-2" data-bs-toggle="modal" data-bs-target="#marcaModal" onclick="openModal('add')" style="z-index: 2; border-radius: 8px;">
-                    <i class="fa-solid fa-plus me-2"></i> Nueva Marca
-                </button>
-                
+                <div class="d-flex align-items-center" style="z-index: 2; position: relative;">
+                    <button class="btn btn-light text-primary fw-bold px-4 py-2 shadow-sm" data-bs-toggle="modal" data-bs-target="#marcaModal" onclick="openModal('add')" style="border-radius: 8px;"><i class="fa-solid fa-plus me-2"></i> Nueva Marca</button>
+                </div>
                 <div class="hero-gears">
-                    <i class="fa-solid fa-gear" style="font-size: 120px; right: -20px; top: -60px;"></i>
-                    <i class="fa-solid fa-gear" style="font-size: 70px; right: 80px; top: -30px;"></i>
+                    <i class="fa-solid fa-gear" style="font-size: 110px; color: rgba(255,255,255,0.08); position: absolute; right: 0; top: -55px;"></i>
+                    <i class="fa-solid fa-gear" style="font-size: 65px; color: rgba(255,255,255,0.06); position: absolute; right: 85px; top: -25px;"></i>
                 </div>
             </div>
 

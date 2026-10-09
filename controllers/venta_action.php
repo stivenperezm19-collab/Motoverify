@@ -13,6 +13,31 @@ if (!isset($_SESSION['user_id']) || !isset($_SESSION['rol'])) {
 
 $ventaModel = new VentaModel($conn);
 
+if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+    $action = $_GET['action'] ?? '';
+    if ($action === 'get_detalle') {
+        $id_venta = intval($_GET['id_venta'] ?? 0);
+        if ($id_venta > 0) {
+            $query = "SELECT vd.id_repuesto, vd.cantidad, vd.precio_unitario, r.nombre, r.codigo_barras, r.codigo_interno 
+                      FROM DETALLE_VENTA vd 
+                      JOIN REPUESTO r ON vd.id_repuesto = r.id_repuesto 
+                      WHERE vd.id_venta = $id_venta";
+            $res = $conn->query($query);
+            $detalle = [];
+            if ($res) {
+                while ($row = $res->fetch_assoc()) {
+                    $detalle[] = $row;
+                }
+            }
+            echo json_encode(['status' => 'success', 'detalle' => $detalle]);
+            exit;
+        } else {
+            echo json_encode(['status' => 'error', 'message' => 'ID de venta inválido.']);
+            exit;
+        }
+    }
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $action = $_POST['action'] ?? '';
 
@@ -26,7 +51,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         $carrito = $data['carrito'] ?? [];
-        $id_cliente = intval($data['id_cliente'] ?? 1); // 1 = Cliente Mostrador
+        $cliente_doc = trim($data['cliente_doc'] ?? '');
+        $cliente_nombre = trim($data['cliente_nombre'] ?? '');
+        $id_cliente = 1; // 1 = Cliente Mostrador por defecto
+
+        if (!empty($cliente_doc)) {
+            $docEsc = $conn->real_escape_string($cliente_doc);
+            $qCli = $conn->query("SELECT id_cliente FROM CLIENTE WHERE documento = '$docEsc'");
+            if ($qCli && $qCli->num_rows > 0) {
+                $id_cliente = $qCli->fetch_assoc()['id_cliente'];
+            } else {
+                // Crear nuevo cliente
+                $nomEsc = $conn->real_escape_string(!empty($cliente_nombre) ? $cliente_nombre : 'Cliente ' . $cliente_doc);
+                $conn->query("INSERT INTO CLIENTE (documento, nombre) VALUES ('$docEsc', '$nomEsc')");
+                $id_cliente = $conn->insert_id;
+            }
+        }
+
         $id_vendedor = $_SESSION['user_id'];
 
         if (empty($carrito)) {
@@ -84,6 +125,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ]);
         } else {
             echo json_encode(['status' => 'error', 'message' => 'Error al registrar la venta. Posible falta de stock.']);
+        }
+    }
+
+    if ($action === 'anular_venta') {
+        if ($_SESSION['rol'] !== 'Administrador') {
+            echo json_encode(['status' => 'error', 'message' => 'Solo el administrador puede anular ventas.']);
+            exit;
+        }
+
+        $id_venta = intval($_POST['id_venta'] ?? 0);
+        if ($id_venta > 0) {
+            if ($ventaModel->anularVenta($id_venta)) {
+                echo json_encode(['status' => 'success', 'message' => 'La venta ha sido anulada y el stock restaurado.']);
+            } else {
+                echo json_encode(['status' => 'error', 'message' => 'Error al anular la venta.']);
+            }
+        } else {
+            echo json_encode(['status' => 'error', 'message' => 'ID de venta inválido.']);
+        }
+    }
+
+    if ($action === 'modificar_venta') {
+        if ($_SESSION['rol'] !== 'Administrador') {
+            echo json_encode(['status' => 'error', 'message' => 'Solo el administrador puede modificar ventas.']);
+            exit;
+        }
+
+        $id_venta = intval($_POST['id_venta'] ?? 0);
+        $cantidades = $_POST['cantidades'] ?? [];
+
+        if ($id_venta > 0 && !empty($cantidades)) {
+            if ($ventaModel->modificarVenta($id_venta, $cantidades)) {
+                echo json_encode(['status' => 'success', 'message' => 'Venta modificada exitosamente.']);
+            } else {
+                echo json_encode(['status' => 'error', 'message' => 'Error al modificar la venta. Verifique el stock o el estado.']);
+            }
+        } else {
+            echo json_encode(['status' => 'error', 'message' => 'Datos inválidos.']);
         }
     }
 }

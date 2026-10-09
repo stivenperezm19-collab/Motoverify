@@ -101,6 +101,8 @@ $caracteristicas = !empty($repuesto['caracteristicas']) ? nl2br(htmlspecialchars
 $observaciones = !empty($repuesto['observaciones']) ? nl2br(htmlspecialchars($repuesto['observaciones'])) : "Ninguna observación adicional.";
 $referencia = htmlspecialchars($repuesto['referencia_fabricante'] ?? 'N/A');
 $estado = htmlspecialchars($repuesto['estado'] ?? 'ACTIVO');
+$precio = isset($repuesto['precio']) ? number_format($repuesto['precio'], 2) : '0.00';
+$stock = isset($repuesto['stock']) ? intval($repuesto['stock']) : 0;
 
 ?>
 <!DOCTYPE html>
@@ -574,6 +576,22 @@ $estado = htmlspecialchars($repuesto['estado'] ?? 'ACTIVO');
                     
                     <!-- Cuadrícula con los datos principales -->
                     <div class="info-grid">
+                        <div class="info-item">
+                            <div class="info-icon"><i class="fa-solid fa-tag text-success"></i></div>
+                            <div class="info-details">
+                                <h6>Precio de Venta:</h6>
+                                <p class="fw-bold text-success" style="font-size: 1.1rem;">$<?= $precio ?></p>
+                            </div>
+                        </div>
+
+                        <div class="info-item">
+                            <div class="info-icon"><i class="fa-solid fa-cubes text-primary"></i></div>
+                            <div class="info-details">
+                                <h6>Stock Disponible:</h6>
+                                <p class="fw-bold <?= $stock > 0 ? 'text-primary' : 'text-danger' ?>"><?= $stock ?> unidades</p>
+                            </div>
+                        </div>
+
                         <div class="info-item">
                             <div class="info-icon"><i class="fa-solid fa-shield"></i></div>
                             <div class="info-details">

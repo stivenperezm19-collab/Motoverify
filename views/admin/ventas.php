@@ -23,30 +23,56 @@ if ($res) {
     <title>Punto de Venta - Motoverify</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        body { background-color: #f8f9fa; }
-        .cart-container { background: white; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); padding: 20px; }
+        body { font-family: 'Inter', sans-serif; background-color: #f8f9fc; color: #333; overflow-x: hidden; }
+        .topbar-global { height: 110px; background: #ffffff; border-bottom: 1px solid #eaeaea; position: fixed; top: 0; left: 0; right: 0; z-index: 1050; }
+        .topbar-logo { display: inline-flex; align-items: center; height: 150%; text-decoration: none; }
+        .topbar-logo img { max-height: 90px; width: auto; object-fit: contain; object-position: left center; margin-left: 5px; padding-right: 15px; }
+        .sidebar { width: 260px; background-color: #ffffff; border-right: 1px solid #eaeaea; position: fixed; top: 110px; bottom: 0; left: 0; z-index: 1000; display: flex; flex-direction: column; }
+        .nav-item { display: flex; align-items: center; gap: 15px; padding: 12px 20px; color: #4b5563; font-weight: 600; font-size: 1.05rem; text-decoration: none; border-radius: 10px; transition: all 0.2s; margin: 0 16px 8px; }
+        .nav-item i { font-size: 1.2rem; width: 20px; text-align: center; }
+        .nav-item:hover { background-color: #f3f4f6; color: #111; }
+        .nav-item.active { background-color: #f0f7ff; color: #004ba8; position: relative; }
+        .nav-item.active::before { content: ''; position: absolute; left: -16px; top: 10%; height: 80%; width: 4px; background-color: #004ba8; border-radius: 0 4px 4px 0; }
+        .main-content { margin-left: 260px; margin-top: 110px; min-height: calc(100vh - 110px); padding: 30px; background-color: #f8f9fc; }
+        .cart-container { background: white; border-radius: 14px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); padding: 25px; border: 1px solid #f0f1f3; }
         .search-results { max-height: 400px; overflow-y: auto; }
-        .sidebar { background: #ffffff; border-right: 1px solid #eaeaea; height: 100vh; position: fixed; width: 250px; }
-        .main-content { margin-left: 250px; padding: 20px; }
+            /* Hero Banner */
+        .hero-banner { background: linear-gradient(135deg, #0640aa 0%, #1e5abf 100%); color: white; position: relative; overflow: hidden; }
+        .hero-banner::before { content: ''; position: absolute; left: 40px; top: 25%; height: 50%; width: 4px; background-color: #60a5fa; border-radius: 4px; }
+        .hero-gears { position: absolute; right: 30px; top: 50%; transform: translateY(-50%); pointer-events: none; }
     </style>
 </head>
 <body>
-    <div class="sidebar p-3">
-        <h4>Motoverify</h4>
-        <hr>
-        <ul class="nav flex-column">
-            <?php if($_SESSION['rol'] === 'Administrador'): ?>
-                <li class="nav-item"><a class="nav-link text-dark" href="dashboard.php"><i class="fa fa-dashboard me-2"></i> Dashboard Admin</a></li>
-            <?php endif; ?>
-            <li class="nav-item"><a class="nav-link text-primary fw-bold" href="ventas.php"><i class="fa fa-shopping-cart me-2"></i> Nueva Venta</a></li>
-            <li class="nav-item"><a class="nav-link text-dark" href="historial_ventas.php"><i class="fa fa-history me-2"></i> Mis Ventas</a></li>
-            <li class="nav-item"><a class="nav-link text-danger" href="../../controllers/logout.php"><i class="fa fa-sign-out me-2"></i> Salir</a></li>
-        </ul>
-    </div>
+    <header class="topbar-global px-4 d-flex align-items-center justify-content-between">
+        <a href="dashboard.php" class="topbar-logo text-decoration-none">
+            <img src="../../public/assets/images/logo_motoverify.png" alt="Motoverify">
+        </a>
+        <div class="d-flex align-items-center gap-3">
+            <a href="perfil.php" class="d-flex align-items-center justify-content-center bg-light text-secondary rounded-circle text-decoration-none" style="width: 45px; height: 45px; font-size: 1.2rem; border: 1px solid #e0e0e0; transition: background 0.2s;" onmouseover="this.style.backgroundColor='#e9ecef'" onmouseout="this.style.backgroundColor='#f8f9fa'">
+                <i class="fa-regular fa-user"></i>
+            </a>
+        </div>
+    </header>
 
-    <div class="main-content">
-        <h2 class="mb-4">Punto de Venta</h2>
+    <?php require_once 'sidebar.php'; ?>
+
+    <main class="main-content">
+        <!-- Hero Banner -->
+        <div class="hero-banner rounded-3 p-4 ps-5 mb-4 d-flex align-items-center justify-content-between">
+            <div class="position-relative" style="z-index: 2; padding-left: 15px;">
+                <h2 class="fw-bold mb-2 d-flex align-items-center gap-3">
+                    <i class="fa-solid fa-cart-shopping" style="font-size: 1.4rem; opacity: .8;"></i>
+                    Punto de Venta
+                </h2>
+                <p class="mb-0 opacity-75" style="font-size: 1rem;">Crea nuevas facturas de repuestos rápidamente.</p>
+            </div>
+            <div class="hero-gears">
+                <i class="fa-solid fa-gear" style="font-size: 110px; color: rgba(255,255,255,0.08); position: absolute; right: 0; top: -55px;"></i>
+                <i class="fa-solid fa-gear" style="font-size: 65px; color: rgba(255,255,255,0.06); position: absolute; right: 85px; top: -25px;"></i>
+            </div>
+        </div>
         <div class="row">
             <div class="col-md-7">
                 <div class="cart-container mb-3">
