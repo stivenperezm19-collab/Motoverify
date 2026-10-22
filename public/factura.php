@@ -23,6 +23,13 @@ if (!$resVenta || $resVenta->num_rows === 0) {
 }
 $venta = $resVenta->fetch_assoc();
 
+// Protección de seguridad: Los clientes solo pueden consultar sus propias compras
+if (isset($_SESSION['rol']) && $_SESSION['rol'] === 'Cliente') {
+    if ((int)$venta['id_cliente'] !== (int)$_SESSION['user_id']) {
+        die("Acceso denegado: No tienes autorización para consultar esta factura.");
+    }
+}
+
 // Obtener detalles
 $queryDetalle = "SELECT vd.cantidad, vd.precio_unitario, vd.subtotal, r.nombre, r.codigo_interno, r.codigo_barras 
                  FROM DETALLE_VENTA vd 

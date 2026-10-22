@@ -610,16 +610,57 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
                 <img src="assets/images/logo_motoverify.png?v=<?php echo time(); ?>" alt="Motoverify" style="height: 95px; width: auto; object-fit: contain;">
             </a>
             
-            <div class="d-flex align-items-center">
-                <a href="#quienes-somos" class="fw-semibold text-dark me-4 text-decoration-none d-none d-md-inline" style="font-size: 1.05rem;">
+            <div class="d-flex align-items-center gap-3">
+                <a href="#quienes-somos" class="fw-semibold text-dark me-2 text-decoration-none d-none d-md-inline" style="font-size: 1.05rem;">
                     <i class="fa-solid fa-users me-1 text-primary"></i> Quiénes Somos
                 </a>
-                <a href="#" class="user-dropdown-btn" data-bs-toggle="modal" data-bs-target="#loginModal" style="text-decoration: none;">
-                    <div class="user-avatar" style="background-color: #004ba8; color: white;">
-                        <i class="fa-solid fa-user"></i>
-                    </div>
-                    <span class="d-none d-sm-inline fw-semibold">Iniciar Sesión</span>
-                </a>
+
+                <?php 
+                $cart_count_public = 0;
+                if (isset($_SESSION['carrito']) && is_array($_SESSION['carrito'])) {
+                    foreach ($_SESSION['carrito'] as $it) {
+                        $cart_count_public += (int)($it['cantidad'] ?? 1);
+                    }
+                }
+                ?>
+
+                <?php if (isset($_SESSION['user_id']) && isset($_SESSION['rol'])): ?>
+                    <?php if ($_SESSION['rol'] === 'Cliente'): ?>
+                        <a href="../views/cliente/carrito.php" class="btn btn-outline-primary position-relative d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; border-radius: 12px; border-color: #cbd5e1; background: #fff;" title="Ver mi carrito">
+                            <i class="fa-solid fa-cart-shopping fs-5"></i>
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger <?= $cart_count_public > 0 ? '' : 'd-none' ?>">
+                                <?= $cart_count_public ?>
+                            </span>
+                        </a>
+                        <a href="../views/cliente/dashboard.php" class="btn btn-primary d-flex align-items-center gap-2 fw-semibold px-3 py-2 shadow-sm" style="border-radius: 12px; background: #004ba8; border: none;">
+                            <i class="fa-solid fa-house"></i>
+                            <span class="d-none d-sm-inline">Mi Panel (<?= htmlspecialchars($_SESSION['nombre'] ?? 'Cliente') ?>)</span>
+                        </a>
+                    <?php elseif ($_SESSION['rol'] === 'Administrador'): ?>
+                        <a href="../views/admin/dashboard.php" class="btn btn-primary d-flex align-items-center gap-2 fw-semibold px-3 py-2 shadow-sm" style="border-radius: 12px; background: #004ba8; border: none;">
+                            <i class="fa-solid fa-gauge-high"></i>
+                            <span class="d-none d-sm-inline">Panel Admin</span>
+                        </a>
+                    <?php elseif ($_SESSION['rol'] === 'Vendedor'): ?>
+                        <a href="../views/vendedor/dashboard.php" class="btn btn-primary d-flex align-items-center gap-2 fw-semibold px-3 py-2 shadow-sm" style="border-radius: 12px; background: #004ba8; border: none;">
+                            <i class="fa-solid fa-shop"></i>
+                            <span class="d-none d-sm-inline">Panel Vendedor</span>
+                        </a>
+                    <?php endif; ?>
+                    <a href="../controllers/logout.php" class="btn btn-outline-danger d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; border-radius: 12px;" title="Cerrar Sesión">
+                        <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                    </a>
+                <?php else: ?>
+                    <a href="registro.php" class="btn btn-outline-primary fw-semibold px-3 py-2 d-none d-sm-inline-flex align-items-center gap-2" style="border-radius: 12px;">
+                        <i class="fa-solid fa-user-plus"></i> Registrarse
+                    </a>
+                    <a href="#" class="user-dropdown-btn" data-bs-toggle="modal" data-bs-target="#loginModal" style="text-decoration: none;">
+                        <div class="user-avatar" style="background-color: #004ba8; color: white;">
+                            <i class="fa-solid fa-user"></i>
+                        </div>
+                        <span class="d-none d-sm-inline fw-semibold">Iniciar Sesión</span>
+                    </a>
+                <?php endif; ?>
             </div>
         </div>
     </nav>
@@ -1282,6 +1323,13 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
                                     <span class="spinner-border spinner-border-sm d-none" id="btnLoginSpinner"></span>
                                 </button>
                             </div>
+
+                            <div class="text-center mt-3 pt-3 border-top">
+                                <span class="text-muted small">¿No tienes una cuenta de cliente?</span><br>
+                                <a href="registro.php" class="fw-bold text-primary small text-decoration-none">
+                                    <i class="fa-solid fa-user-plus me-1"></i> Regístrate gratis aquí
+                                </a>
+                            </div>
                         </form>
                     </div>
 
@@ -1352,6 +1400,13 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
                 btnLoginText.classList.remove('d-none');
                 btnLoginSpinner.classList.add('d-none');
             });
+
+            // Abrir automáticamente el modal si se solicita en la URL (?login=1)
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('login') === '1') {
+                const myLoginModal = new bootstrap.Modal(document.getElementById('loginModal'));
+                myLoginModal.show();
+            }
         });
     </script>
 

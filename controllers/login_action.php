@@ -5,8 +5,9 @@ session_start();
 header('Content-Type: application/json');
 // Traemos la conexión a la base de datos
 require_once '../config/database.php';
-// Traemos las herramientas (modelo) para buscar a los administradores
+// Traemos las herramientas (modelos) para buscar a los administradores y clientes
 require_once '../models/AdministradorModel.php';
+require_once '../models/ClienteModel.php';
 
 // Verificamos si alguien intentó enviar el formulario de inicio de sesión
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -21,12 +22,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     try {
-        // Preparamos nuestro buscador de administradores
+        // 1. Buscamos primero en el modelo de administradores y vendedores
         $adminModel = new AdministradorModel($conn);
-        // Buscamos si existe alguien con ese correo o ese nombre de usuario
         $user = $adminModel->getByUserOrEmail($username);
 
-        // Si encontramos a la persona...
         if ($user) {
             // Verificamos si la cuenta está inactiva
             if (isset($user['estado']) && $user['estado'] === 'Inactivo') {
@@ -34,11 +33,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 exit;
             }
 
-            // Comparamos la contraseña que escribieron con la que tenemos guardada (encriptada)
-            // (La segunda parte "===" es solo un respaldo por si la contraseña no estaba encriptada)
+            // Comparamos la contraseña (hash o texto directo de respaldo)
             if (password_verify($password, $user['password']) || $password === $user['password']) {
-                // Si la contraseña es correcta, le damos su "gafete" virtual guardando sus datos en la sesión
                 $_SESSION['user_id'] = $user['id'];
+                $_SESSION['nombre'] = $user['nombre'] ?? $user['usuario'] ?? 'Usuario';
                 $_SESSION['email'] = $user['email'];
                 $_SESSION['rol'] = $user['rol'] ?? 'Administrador';
                 
@@ -47,22 +45,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $redirect = '../views/vendedor/dashboard.php';
                 }
                 
-                // Le decimos a la página que todo está bien y que lo envíe a su panel correspondiente
                 echo json_encode(['status' => 'success', 'redirect' => $redirect]);
                 exit;
             } else {
-                // Si la persona existe pero la contraseña está mal
                 echo json_encode(['status' => 'error', 'message' => 'La contraseña es incorrecta.']);
                 exit;
             }
-        } else {
-            // Si no encontramos a nadie con ese correo/usuario
-            echo json_encode(['status' => 'error', 'message' => 'Usuario o contraseña incorrectos.']);
-            exit;
         }
+
+        // 2. Si no es administrador ni vendedor, buscamos en el modelo de Clientes
+        $clienteModel = new ClienteModel($conn);
+        $cliente = $clienteModel->getByEmail($username);
+
+        if ($cliente) {
+            if (isset($cliente['estado']) && $cliente['estado'] === 'Inactivo') {
+                echo json_encode(['status' => 'error', 'message' => 'Tu cuenta de cliente está inactiva. Contacta a soporte.']);
+                exit;
+            }
+
+            if (password_verify($password, $cliente['clave_hash']) || $password === $cliente['clave_hash']) {
+                $_SESSION['user_id'] = $cliente['id_cliente'];
+                $_SESSION['nombre'] = $cliente['nombre'];
+                $_SESSION['email'] = $cliente['correo'];
+                $_SESSION['rol'] = 'Cliente';
+                $_SESSION['is_cliente'] = true;
+
+                $redirect = '../views/cliente/dashboard.php';
+                echo json_encode(['status' => 'success', 'redirect' => $redirect]);
+                exit;
+            } else {
+                echo json_encode(['status' => 'error', 'message' => 'La contraseña es incorrecta.']);
+                exit;
+            }
+        }
+
+        // 3. Si no encontramos a nadie con ese correo/usuario
+        echo json_encode(['status' => 'error', 'message' => 'Usuario o contraseña incorrectos.']);
+        exit;
+
     } catch (Exception $e) {
         // Si hay algún problema técnico con la base de datos
-        echo json_encode(['status' => 'error', 'message' => 'Error de BD. Verifica que la tabla exista.']);
+        echo json_encode(['status' => 'error', 'message' => 'Error de conexión a la base de datos.']);
         exit;
     }
 }

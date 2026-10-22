@@ -478,6 +478,7 @@ $stock = isset($repuesto['stock']) ? intval($repuesto['stock']) : 0;
         }
 
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body>
 
@@ -641,6 +642,31 @@ $stock = isset($repuesto['stock']) ? intval($repuesto['stock']) : 0;
                         </div>
                     </div>
 
+                    <!-- Caja de Compra para Clientes -->
+                    <div class="card border-0 shadow-sm p-4 mb-4 rounded-4" style="background: linear-gradient(135deg, #f0f7ff 0%, #e0efff 100%); border-left: 5px solid #004ba8 !important;">
+                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                            <div>
+                                <span class="text-muted small fw-semibold text-uppercase">Disponible para compra inmediata</span>
+                                <div class="fs-3 fw-bold text-primary mb-0">$<?= $precio ?> <span class="fs-6 text-muted fw-normal">COP</span></div>
+                                <span class="badge <?= $stock > 0 ? 'bg-success' : 'bg-danger' ?> mt-1">
+                                    <?= $stock > 0 ? "Stock: $stock unidades" : 'Agotado' ?>
+                                </span>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <?php if ($stock > 0): ?>
+                                    <button type="button" class="btn btn-primary rounded-pill px-4 py-2 fw-semibold shadow-sm d-flex align-items-center gap-2" onclick="agregarAlCarrito(<?= $id_int ?>)">
+                                        <i class="fa-solid fa-cart-plus"></i> Añadir al Carrito
+                                    </button>
+                                    <a href="../views/cliente/carrito.php" class="btn btn-outline-primary rounded-pill px-3 py-2 fw-semibold" title="Ir al carrito">
+                                        <i class="fa-solid fa-cart-shopping"></i>
+                                    </a>
+                                <?php else: ?>
+                                    <button type="button" class="btn btn-secondary rounded-pill px-4 py-2" disabled>Agotado</button>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Descripción larga del producto -->
                     <h4 class="section-title">Detalles del producto</h4>
                     <p class="product-desc"><?= $descripcion ?></p>
@@ -744,6 +770,39 @@ $stock = isset($repuesto['stock']) ? intval($repuesto['stock']) : 0;
                     btn.innerHTML = originalHtml;
                     btn.disabled = false;
                 });
+        }
+
+        // Función para agregar al carrito desde la ficha técnica
+        function agregarAlCarrito(id) {
+            fetch('../controllers/cliente_pedido_action.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'agregar_carrito', id_repuesto: id, cantidad: 1 })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    Swal.fire({
+                        icon: 'success',
+                        title: '¡Añadido al Carrito!',
+                        text: data.message,
+                        showCancelButton: true,
+                        confirmButtonColor: '#004ba8',
+                        cancelButtonColor: '#64748b',
+                        confirmButtonText: 'Ver Carrito',
+                        cancelButtonText: 'Seguir Viendo'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            window.location.href = '../views/cliente/carrito.php';
+                        }
+                    });
+                } else {
+                    Swal.fire({ icon: 'warning', title: 'Atención', text: data.message });
+                }
+            })
+            .catch(err => {
+                Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo añadir al carrito.' });
+            });
         }
     </script>
 </body>
