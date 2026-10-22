@@ -196,6 +196,9 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
     <!-- HTML5 QRCode -->
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
     
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -493,8 +496,9 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
             width: 100%;
             display: none;
         }
-        /* --- Login Modal Styles --- */
-        .modal-login .modal-content {
+        /* --- Login & Register Modal Styles --- */
+        .modal-login .modal-content,
+        .modal-register .modal-content {
             border-radius: 20px;
             border: none;
             overflow: hidden;
@@ -504,12 +508,20 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
         .modal-login .modal-dialog {
             max-width: 480px;
         }
+        .modal-register .modal-dialog {
+            max-width: 660px;
+        }
         .modal-login-card {
             background: white;
             border-radius: 20px;
             box-shadow: 0 15px 40px rgba(0,0,0,0.15);
             padding: 40px 50px;
             position: relative;
+        }
+        @media (max-width: 576px) {
+            .modal-register .modal-login-card {
+                padding: 30px 20px 25px 20px;
+            }
         }
         /* Background overlays for the modal */
         .modal-login-bg-top {
@@ -563,7 +575,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
         
         .login-title {
             text-align: center; font-weight: 800; color: #0b2253; font-size: 1.6rem;
-            margin-bottom: 30px; position: relative;
+            margin-bottom: 25px; position: relative;
         }
         .login-title::after {
             content: ''; position: absolute; bottom: -10px; left: 50%;
@@ -571,17 +583,54 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
             background-color: #0066ff; border-radius: 2px;
         }
         
-        .modal-login .form-label {
-            font-weight: 700; color: #0b2253; font-size: 0.95rem;
-            margin-bottom: 8px; display: flex; align-items: center; gap: 8px;
+        .modal-login .form-label,
+        .modal-register .form-label {
+            font-weight: 700; color: #0b2253; font-size: 0.92rem;
+            margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between;
+        }
+        .modal-login .form-label .label-tag-icon,
+        .modal-register .form-label .label-tag-icon {
+            color: #0066ff; font-size: 0.9rem;
+        }
+        .modal-login .form-control-custom,
+        .modal-register .form-control-custom {
+            width: 100%; padding: 11px 15px; border: 2px solid #3b82f6;
+            border-radius: 10px; font-size: 0.95rem; color: #333; outline: none;
+            background-color: #fcfcfd; transition: box-shadow 0.2s, border-color 0.2s;
         }
         .modal-login .form-control-custom {
-            width: 100%; padding: 12px 15px; border: 2px solid #3b82f6;
-            border-radius: 10px; font-size: 1rem; color: #333; outline: none;
-            margin-bottom: 25px; background-color: #fcfcfd; transition: box-shadow 0.2s;
+            margin-bottom: 25px;
         }
-        .modal-login .form-control-custom:focus { box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15); }
-        .modal-login .form-control-custom::placeholder { color: #a0aec0; font-weight: 500; }
+        .modal-register .form-control-custom {
+            margin-bottom: 0px;
+        }
+        .modal-login .form-control-custom:focus,
+        .modal-register .form-control-custom:focus {
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+            border-color: #1d4ed8;
+            background-color: #ffffff;
+        }
+        .modal-login .form-control-custom::placeholder,
+        .modal-register .form-control-custom::placeholder {
+            color: #a0aec0; font-weight: 500;
+        }
+        
+        .toggle-password-btn {
+            position: absolute;
+            top: 50%;
+            right: 12px;
+            transform: translateY(-50%);
+            background: transparent;
+            border: none;
+            color: #64748b;
+            cursor: pointer;
+            padding: 4px 6px;
+            font-size: 0.95rem;
+            transition: color 0.15s;
+        }
+        .toggle-password-btn:hover {
+            color: #0066ff;
+        }
         
         .forgot-pass { text-align: right; margin-top: -15px; margin-bottom: 30px; }
         .forgot-pass a { color: #3b82f6; font-weight: 600; font-size: 0.85rem; text-decoration: none; }
@@ -651,7 +700,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
                         <i class="fa-solid fa-arrow-right-from-bracket"></i>
                     </a>
                 <?php else: ?>
-                    <a href="registro.php" class="btn btn-outline-primary fw-semibold px-3 py-2 d-none d-sm-inline-flex align-items-center gap-2" style="border-radius: 12px;">
+                    <a href="#" class="btn btn-outline-primary fw-semibold px-3 py-2 d-none d-sm-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#registerModal" style="border-radius: 12px;">
                         <i class="fa-solid fa-user-plus"></i> Registrarse
                     </a>
                     <a href="#" class="user-dropdown-btn" data-bs-toggle="modal" data-bs-target="#loginModal" style="text-decoration: none;">
@@ -1326,7 +1375,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
 
                             <div class="text-center mt-3 pt-3 border-top">
                                 <span class="text-muted small">¿No tienes una cuenta de cliente?</span><br>
-                                <a href="registro.php" class="fw-bold text-primary small text-decoration-none">
+                                <a href="#" data-bs-toggle="modal" data-bs-target="#registerModal" data-bs-dismiss="modal" class="fw-bold text-primary small text-decoration-none">
                                     <i class="fa-solid fa-user-plus me-1"></i> Regístrate gratis aquí
                                 </a>
                             </div>
@@ -1401,11 +1450,14 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
                 btnLoginSpinner.classList.add('d-none');
             });
 
-            // Abrir automáticamente el modal si se solicita en la URL (?login=1)
+            // Abrir automáticamente el modal si se solicita en la URL (?login=1 o ?register=1)
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.get('login') === '1') {
                 const myLoginModal = new bootstrap.Modal(document.getElementById('loginModal'));
                 myLoginModal.show();
+            } else if (urlParams.get('register') === '1') {
+                const myRegisterModal = new bootstrap.Modal(document.getElementById('registerModal'));
+                myRegisterModal.show();
             }
         });
     </script>
@@ -1528,6 +1580,272 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
                 btnForgotSubmit.disabled = false;
                 btnForgotText.classList.remove('d-none');
                 btnForgotSpinner.classList.add('d-none');
+            });
+        });
+    </script>
+
+    <!-- Register Modal -->
+    <div class="modal fade modal-register" id="registerModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content bg-transparent">
+                <div class="modal-login-card">
+                    
+                    <div class="modal-login-bg-top">
+                        <i class="fa-solid fa-gear position-absolute" style="color: rgba(255,255,255,0.06); font-size: 80px; top: -10px; left: -10px;"></i>
+                        <i class="fa-solid fa-gear position-absolute" style="color: rgba(255,255,255,0.06); font-size: 105px; top: -20px; right: -20px;"></i>
+                    </div>
+                    
+                    <div class="modal-login-bg-bottom">
+                        <i class="fa-solid fa-gear position-absolute" style="color: rgba(0,0,0,0.03); font-size: 150px; bottom: -30px; left: -30px;"></i>
+                        <i class="fa-solid fa-motorcycle position-absolute" style="color: rgba(0,0,0,0.03); font-size: 105px; bottom: 20px; right: 10px;"></i>
+                    </div>
+
+                    <div class="login-content">
+                        <div class="btn-close-card" data-bs-dismiss="modal" aria-label="Close">
+                            <i class="fa-solid fa-xmark"></i>
+                        </div>
+
+                        <div class="avatar-container">
+                            <div class="avatar-circle">
+                                <i class="fa-solid fa-user-plus"></i>
+                                <div class="avatar-badge"><i class="fa-solid fa-gear"></i></div>
+                            </div>
+                        </div>
+
+                        <h2 class="login-title">Crear cuenta</h2>
+
+                        <div class="text-center mb-3">
+                            <span class="badge px-3 py-2 rounded-pill fw-semibold" style="background-color: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; font-size: 0.8rem;">
+                                <i class="fa-solid fa-shield-halved me-1"></i> Registro exclusivo para Clientes de Motoverify
+                            </span>
+                        </div>
+
+                        <div class="alert-error d-none" id="registerErrorMsg">
+                            <i class="fa-solid fa-circle-exclamation me-1"></i> <span id="registerErrorText">Error</span>
+                        </div>
+
+                        <form id="ajaxRegisterForm" novalidate>
+                            <input type="hidden" name="action" value="register">
+
+                            <div class="row g-3">
+                                <!-- Nombre Completo -->
+                                <div class="col-12">
+                                    <label for="modalRegNombre" class="form-label">
+                                        <span>Nombre Completo <span class="text-danger">*</span></span>
+                                        <i class="fa-solid fa-user label-tag-icon"></i>
+                                    </label>
+                                    <input type="text" id="modalRegNombre" name="nombre" class="form-control-custom" placeholder="Ej: Carlos Ramírez" required autocomplete="name">
+                                </div>
+
+                                <!-- Correo Electrónico -->
+                                <div class="col-12 col-md-6">
+                                    <label for="modalRegEmail" class="form-label">
+                                        <span>Usuario o Email <span class="text-danger">*</span></span>
+                                        <i class="fa-solid fa-envelope label-tag-icon"></i>
+                                    </label>
+                                    <input type="email" id="modalRegEmail" name="correo" class="form-control-custom" placeholder="cliente@correo.com" required autocomplete="email">
+                                </div>
+
+                                <!-- Cédula / Documento -->
+                                <div class="col-12 col-md-6">
+                                    <label for="modalRegDocumento" class="form-label">
+                                        <span>Cédula / Documento</span>
+                                        <i class="fa-solid fa-id-card label-tag-icon"></i>
+                                    </label>
+                                    <input type="text" id="modalRegDocumento" name="documento" class="form-control-custom" placeholder="Ej: 1083456789">
+                                </div>
+
+                                <!-- Contraseña -->
+                                <div class="col-12 col-md-6">
+                                    <label for="modalRegPassword" class="form-label">
+                                        <span>Contraseña <span class="text-danger">*</span></span>
+                                        <i class="fa-solid fa-lock label-tag-icon"></i>
+                                    </label>
+                                    <div class="position-relative">
+                                        <input type="password" id="modalRegPassword" name="password" class="form-control-custom pe-5" placeholder="••••••••••••" minlength="6" required autocomplete="new-password">
+                                        <button type="button" class="toggle-password-btn" data-target="modalRegPassword" title="Mostrar/ocultar contraseña" tabindex="-1">
+                                            <i class="fa-regular fa-eye"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Confirmar Contraseña -->
+                                <div class="col-12 col-md-6">
+                                    <label for="modalRegPasswordConfirm" class="form-label">
+                                        <span>Confirmar Contraseña <span class="text-danger">*</span></span>
+                                        <i class="fa-solid fa-shield-halved label-tag-icon"></i>
+                                    </label>
+                                    <div class="position-relative">
+                                        <input type="password" id="modalRegPasswordConfirm" name="password_confirm" class="form-control-custom pe-5" placeholder="••••••••••••" minlength="6" required autocomplete="new-password">
+                                        <button type="button" class="toggle-password-btn" data-target="modalRegPasswordConfirm" title="Mostrar/ocultar contraseña" tabindex="-1">
+                                            <i class="fa-regular fa-eye"></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Teléfono / Celular -->
+                                <div class="col-12 col-md-6">
+                                    <label for="modalRegTelefono" class="form-label">
+                                        <span>Teléfono / Celular</span>
+                                        <i class="fa-solid fa-phone label-tag-icon"></i>
+                                    </label>
+                                    <input type="tel" id="modalRegTelefono" name="telefono" class="form-control-custom" placeholder="Ej: 3101234567" autocomplete="tel">
+                                </div>
+
+                                <!-- Ciudad / Municipio -->
+                                <div class="col-12 col-md-6">
+                                    <label for="modalRegCiudad" class="form-label">
+                                        <span>Ciudad / Municipio</span>
+                                        <i class="fa-solid fa-city label-tag-icon"></i>
+                                    </label>
+                                    <input type="text" id="modalRegCiudad" name="ciudad" class="form-control-custom" placeholder="Ej: Neiva, Huila">
+                                </div>
+
+                                <!-- Dirección de Entrega -->
+                                <div class="col-12">
+                                    <label for="modalRegDireccion" class="form-label">
+                                        <span>Dirección de Entrega</span>
+                                        <i class="fa-solid fa-map-location-dot label-tag-icon"></i>
+                                    </label>
+                                    <input type="text" id="modalRegDireccion" name="direccion" class="form-control-custom" placeholder="Calle, Carrera, Número, Barrio o Conjunto" autocomplete="street-address">
+                                </div>
+                            </div>
+
+                            <!-- Submit Button -->
+                            <div class="text-center mt-4 pt-2">
+                                <button type="submit" class="btn-submit" id="btnRegisterSubmit">
+                                    <span id="btnRegisterText">Crear Mi Cuenta</span>
+                                    <span class="spinner-border spinner-border-sm d-none ms-2" id="btnRegisterSpinner" role="status" aria-hidden="true"></span>
+                                </button>
+                            </div>
+
+                            <div class="text-center mt-3 pt-3 border-top" style="border-color: #e2e8f0 !important;">
+                                <span class="text-muted small">¿Ya tienes una cuenta registrada?</span><br>
+                                <a href="#" data-bs-toggle="modal" data-bs-target="#loginModal" data-bs-dismiss="modal" class="fw-bold text-primary small text-decoration-none d-inline-flex align-items-center gap-1 mt-1">
+                                    <i class="fa-solid fa-arrow-right-to-bracket"></i> Iniciar sesión aquí
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Register AJAX Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const regForm = document.getElementById('ajaxRegisterForm');
+            const regErrorMsgBox = document.getElementById('registerErrorMsg');
+            const regErrorMsgText = document.getElementById('registerErrorText');
+            const btnRegSubmit = document.getElementById('btnRegisterSubmit');
+            const btnRegText = document.getElementById('btnRegisterText');
+            const btnRegSpinner = document.getElementById('btnRegisterSpinner');
+
+            // Toggle password reveal
+            document.querySelectorAll('#registerModal .toggle-password-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const targetId = this.getAttribute('data-target');
+                    const input = document.getElementById(targetId);
+                    const icon = this.querySelector('i');
+                    if (input.type === 'password') {
+                        input.type = 'text';
+                        icon.classList.remove('fa-eye');
+                        icon.classList.add('fa-eye-slash');
+                    } else {
+                        input.type = 'password';
+                        icon.classList.remove('fa-eye-slash');
+                        icon.classList.add('fa-eye');
+                    }
+                });
+            });
+
+            function showRegError(msg) {
+                regErrorMsgText.textContent = msg;
+                regErrorMsgBox.classList.remove('d-none');
+            }
+
+            function hideRegError() {
+                regErrorMsgBox.classList.add('d-none');
+            }
+
+            regForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                hideRegError();
+
+                const nombre = document.getElementById('modalRegNombre').value.trim();
+                const correo = document.getElementById('modalRegEmail').value.trim();
+                const pass = document.getElementById('modalRegPassword').value;
+                const passConf = document.getElementById('modalRegPasswordConfirm').value;
+
+                if (!nombre || !correo || !pass) {
+                    showRegError('Por favor completa los campos obligatorios (*).');
+                    return;
+                }
+
+                if (pass.length < 6) {
+                    showRegError('La contraseña debe tener al menos 6 caracteres.');
+                    return;
+                }
+
+                if (pass !== passConf) {
+                    showRegError('La confirmación de la contraseña no coincide.');
+                    return;
+                }
+
+                btnRegSubmit.disabled = true;
+                btnRegText.textContent = 'Creando cuenta...';
+                btnRegSpinner.classList.remove('d-none');
+
+                const formData = new FormData(regForm);
+
+                fetch('../controllers/cliente_auth_action.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(res => res.json())
+                .then(data => {
+                    btnRegSubmit.disabled = false;
+                    btnRegText.textContent = 'Crear Mi Cuenta';
+                    btnRegSpinner.classList.add('d-none');
+
+                    if (data.status === 'success') {
+                        // Close modal
+                        const registerModalEl = document.getElementById('registerModal');
+                        const modalInstance = bootstrap.Modal.getInstance(registerModalEl);
+                        if (modalInstance) {
+                            modalInstance.hide();
+                        }
+
+                        Swal.fire({
+                            icon: 'success',
+                            title: '¡Bienvenido a Motoverify!',
+                            text: data.message,
+                            confirmButtonColor: '#062b80',
+                            confirmButtonText: 'Ir a mi Panel de Cliente',
+                            allowOutsideClick: false
+                        }).then(() => {
+                            window.location.href = data.redirect || '../views/cliente/dashboard.php';
+                        });
+                    } else {
+                        showRegError(data.message || 'No se pudo crear la cuenta.');
+                    }
+                })
+                .catch(err => {
+                    btnRegSubmit.disabled = false;
+                    btnRegText.textContent = 'Crear Mi Cuenta';
+                    btnRegSpinner.classList.add('d-none');
+                    showRegError('Error de conexión al procesar el registro.');
+                });
+            });
+
+            document.getElementById('registerModal').addEventListener('hidden.bs.modal', function () {
+                regForm.reset();
+                hideRegError();
+                btnRegSubmit.disabled = false;
+                btnRegText.textContent = 'Crear Mi Cuenta';
+                btnRegSpinner.classList.add('d-none');
             });
         });
     </script>
