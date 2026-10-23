@@ -11,11 +11,11 @@ if (isset($_SESSION['carrito']) && is_array($_SESSION['carrito'])) {
 <aside class="sidebar">
     <div class="px-3 mb-3 mt-3">
         <?php if ($is_cliente_auth): ?>
-            <a href="catalogo.php" class="btn btn-primary w-100 d-flex align-items-center justify-content-center gap-2 fw-semibold shadow-sm" style="border-radius: 12px; padding: 12px; background: linear-gradient(135deg, #004ba8 0%, #1e5abf 100%); border: none;">
+            <a href="repuestos.php" class="btn btn-primary w-100 d-flex align-items-center justify-content-center gap-2 fw-semibold shadow-sm" style="border-radius: 12px; padding: 12px; background: linear-gradient(135deg, #004ba8 0%, #1e5abf 100%); border: none;">
                 <i class="fa-solid fa-bag-shopping"></i> Comprar Repuestos
             </a>
         <?php else: ?>
-            <a href="catalogo.php" class="btn btn-primary w-100 d-flex align-items-center justify-content-center gap-2 fw-semibold shadow-sm" style="border-radius: 12px; padding: 12px; background: linear-gradient(135deg, #004ba8 0%, #1e5abf 100%); border: none;">
+            <a href="repuestos.php" class="btn btn-primary w-100 d-flex align-items-center justify-content-center gap-2 fw-semibold shadow-sm" style="border-radius: 12px; padding: 12px; background: linear-gradient(135deg, #004ba8 0%, #1e5abf 100%); border: none;">
                 <i class="fa-solid fa-magnifying-glass"></i> Consultar Repuestos
             </a>
         <?php endif; ?>
@@ -28,8 +28,12 @@ if (isset($_SESSION['carrito']) && is_array($_SESSION['carrito'])) {
             </a>
         <?php endif; ?>
 
-        <a href="catalogo.php" class="nav-item <?= $current_page == 'catalogo.php' ? 'active' : '' ?>">
+        <a href="catalogo.php" class="nav-item <?= $current_page == 'catalogo.php' ? 'active' : '' ?>" title="Categorías y diagrama de ubicación en la moto">
             <i class="fa-solid fa-book-open"></i> Catálogo
+        </a>
+
+        <a href="repuestos.php" class="nav-item <?= $current_page == 'repuestos.php' ? 'active' : '' ?>" title="Tienda de repuestos">
+            <i class="fa-solid fa-puzzle-piece"></i> Repuestos
         </a>
 
         <a href="carrito.php" class="nav-item <?= $current_page == 'carrito.php' ? 'active' : '' ?>">

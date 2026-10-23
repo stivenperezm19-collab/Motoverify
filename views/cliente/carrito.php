@@ -124,8 +124,8 @@ $total = $subtotal + $impuestos;
                     <i class="fa-solid fa-cart-arrow-down fs-1 text-primary opacity-50 mb-3" style="font-size: 4rem !important;"></i>
                     <h3 class="fw-bold text-dark">Tu carrito de compras está vacío</h3>
                     <p class="text-muted mb-4">Parece que aún no has agregado repuestos a tu compra.</p>
-                    <a href="catalogo.php" class="btn btn-primary btn-lg rounded-pill px-5 fw-semibold shadow-sm">
-                        <i class="fa-solid fa-book-open me-2"></i> Explorar Catálogo de Repuestos
+                    <a href="repuestos.php" class="btn btn-primary btn-lg rounded-pill px-5 fw-semibold shadow-sm">
+                        <i class="fa-solid fa-puzzle-piece me-2"></i> Explorar Repuestos Disponibles
                     </a>
                 </div>
             </div>
@@ -192,7 +192,7 @@ $total = $subtotal + $impuestos;
                         </div>
 
                         <div class="d-flex justify-content-between align-items-center pt-3 mt-3 border-top">
-                            <a href="catalogo.php" class="btn btn-outline-primary rounded-pill px-4">
+                            <a href="repuestos.php" class="btn btn-outline-primary rounded-pill px-4">
                                 <i class="fa-solid fa-arrow-left me-1"></i> Seguir Comprando
                             </a>
                         </div>

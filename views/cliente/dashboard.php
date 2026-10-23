@@ -275,10 +275,31 @@ if (isset($_SESSION['carrito']) && is_array($_SESSION['carrito'])) {
                 </div>
             </div>
 
+            <!-- Banner Catálogo Interactivo en la Moto -->
+            <div class="mb-4 mt-3 p-3 bg-white rounded-4 border shadow-sm d-flex flex-wrap align-items-center justify-content-between gap-3">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="bg-primary-subtle text-primary rounded-3 d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                        <i class="fa-solid fa-motorcycle fs-4"></i>
+                    </div>
+                    <div>
+                        <h6 class="fw-bold text-dark mb-0">Catálogo de Repuestos por Ubicación en la Moto</h6>
+                        <span class="text-muted small">Explora las partes de la motocicleta divididas en categorías técnicas (frenos, motor, combustible, etc.).</span>
+                    </div>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="catalogo.php" class="btn btn-outline-primary btn-sm rounded-pill px-3 fw-semibold">
+                        <i class="fa-solid fa-book-open me-1"></i> Ver Catálogo en Moto
+                    </a>
+                    <a href="repuestos.php" class="btn btn-primary btn-sm rounded-pill px-3 fw-semibold" style="background: #004ba8; border: none;">
+                        <i class="fa-solid fa-puzzle-piece me-1"></i> Tienda de Repuestos
+                    </a>
+                </div>
+            </div>
+
             <!-- Repuestos Destacados para Comprar -->
             <div class="d-flex align-items-center justify-content-between mb-3 mt-4">
                 <h3 class="section-title mb-0">Repuestos recomendados para ti</h3>
-                <a href="catalogo.php" class="btn btn-sm btn-outline-primary fw-semibold rounded-pill px-3">
+                <a href="repuestos.php" class="btn btn-sm btn-outline-primary fw-semibold rounded-pill px-3">
                     Explorar Todos <i class="fa-solid fa-arrow-right ms-1"></i>
                 </a>
             </div>
@@ -293,13 +314,19 @@ if (isset($_SESSION['carrito']) && is_array($_SESSION['carrito'])) {
                     <?php foreach ($repuestos as $r): ?>
                         <div class="col-12 col-md-6 col-lg-4">
                             <div class="part-card shadow-sm">
-                                <div class="text-center p-2 mb-2 bg-light rounded-3">
+                                <div class="text-center p-2 mb-2 bg-light rounded-3 position-relative overflow-hidden">
                                     <?php if (!empty($r['imagen_url'])): ?>
                                         <img src="../../<?= htmlspecialchars($r['imagen_url']); ?>" alt="<?= htmlspecialchars($r['nombre']); ?>" class="part-img">
                                     <?php else: ?>
                                         <div class="part-img d-flex align-items-center justify-content-center text-secondary">
                                             <i class="fa-solid fa-motorcycle fs-1 opacity-25"></i>
                                         </div>
+                                    <?php endif; ?>
+
+                                    <?php if (!empty($r['categoria_nombre'])): ?>
+                                        <span class="position-absolute top-0 start-0 m-2 badge bg-primary text-white shadow-sm" style="font-size: 0.72rem; font-weight: 600;">
+                                            <i class="fa-solid fa-layer-group me-1"></i> <?= htmlspecialchars($r['categoria_nombre']) ?>
+                                        </span>
                                     <?php endif; ?>
                                 </div>
                                 
@@ -310,7 +337,14 @@ if (isset($_SESSION['carrito']) && is_array($_SESSION['carrito'])) {
                                     </span>
                                 </div>
 
-                                <div class="part-code"><?= htmlspecialchars($r['codigo_interno']) ?></div>
+                                <div class="d-flex align-items-center justify-content-between mb-1">
+                                    <div class="part-code"><?= htmlspecialchars($r['codigo_interno']) ?></div>
+                                    <?php if (!empty($r['categoria_nombre'])): ?>
+                                        <span class="badge rounded-pill bg-light text-secondary border px-2 py-1" style="font-size: 0.72rem;">
+                                            <?= htmlspecialchars($r['categoria_nombre']) ?>
+                                        </span>
+                                    <?php endif; ?>
+                                </div>
                                 <div class="part-name" title="<?= htmlspecialchars($r['nombre']) ?>">
                                     <?= htmlspecialchars($r['nombre']) ?>
                                 </div>

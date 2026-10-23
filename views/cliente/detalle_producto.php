@@ -126,8 +126,9 @@ if ($resRel) {
             <ol class="breadcrumb">
                 <li class="breadcrumb-item"><a href="<?= $is_cliente_auth ? 'dashboard.php' : '../../public/index.php' ?>" class="text-decoration-none">Inicio</a></li>
                 <li class="breadcrumb-item"><a href="catalogo.php" class="text-decoration-none">Catálogo</a></li>
+                <li class="breadcrumb-item"><a href="repuestos.php" class="text-decoration-none">Repuestos</a></li>
                 <?php if (!empty($repuesto['categoria_nombre'])): ?>
-                    <li class="breadcrumb-item"><a href="catalogo.php?categoria=<?= $repuesto['id_categoria'] ?>" class="text-decoration-none"><?= htmlspecialchars($repuesto['categoria_nombre']) ?></a></li>
+                    <li class="breadcrumb-item"><a href="repuestos.php?categoria=<?= $repuesto['id_categoria'] ?>" class="text-decoration-none"><?= htmlspecialchars($repuesto['categoria_nombre']) ?></a></li>
                 <?php endif; ?>
                 <li class="breadcrumb-item active" aria-current="page"><?= htmlspecialchars($repuesto['nombre']) ?></li>
             </ol>
@@ -160,11 +161,16 @@ if ($resRel) {
                 <!-- Columna Datos y Compra -->
                 <div class="col-12 col-lg-6 d-flex flex-direction-column">
                     <div>
-                        <!-- Badges de marca y stock -->
-                        <div class="d-flex align-items-center gap-2 mb-2">
+                        <!-- Badges de marca, categoría y stock -->
+                        <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
                             <span class="badge bg-primary-subtle text-primary fw-bold px-3 py-1 rounded-pill" style="font-size: 0.85rem;">
-                                <?= htmlspecialchars($repuesto['marca_nombre'] ?? 'Genérico') ?>
+                                <i class="fa-solid fa-tag me-1"></i> <?= htmlspecialchars($repuesto['marca_nombre'] ?? 'Genérico') ?>
                             </span>
+                            <?php if (!empty($repuesto['categoria_nombre'])): ?>
+                                <a href="repuestos.php?categoria=<?= $repuesto['id_categoria'] ?>" class="badge bg-light text-dark border fw-bold px-3 py-1 rounded-pill text-decoration-none shadow-sm" style="font-size: 0.85rem;" title="Ver más repuestos en esta categoría">
+                                    <i class="fa-solid fa-layer-group me-1 text-primary"></i> <?= htmlspecialchars($repuesto['categoria_nombre']) ?>
+                                </a>
+                            <?php endif; ?>
                             <?php if ($repuesto['stock'] > 0): ?>
                                 <span class="badge bg-success-subtle text-success fw-bold px-3 py-1 rounded-pill" style="font-size: 0.85rem;">
                                     <i class="fa-solid fa-circle-check me-1"></i> Stock Disponible (<?= $repuesto['stock'] ?> unidades)

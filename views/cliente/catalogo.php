@@ -2,133 +2,83 @@
 session_start();
 $is_cliente_auth = isset($_SESSION['user_id']) && isset($_SESSION['rol']) && $_SESSION['rol'] === 'Cliente';
 
+// Si nos llegan filtros específicos de búsqueda o repuestos por query param, redirigir a repuestos.php
+if (!empty($_GET['categoria']) || !empty($_GET['search']) || !empty($_GET['marca']) || !empty($_GET['modelo'])) {
+    header('Location: repuestos.php?' . http_build_query($_GET));
+    exit;
+}
+
 require_once '../../config/database.php';
-require_once '../../models/MarcaModel.php';
 require_once '../../models/CategoriaModel.php';
+require_once '../../models/MarcaModel.php';
 require_once '../../models/RepuestoModel.php';
 
-$marcaModel = new MarcaModel($conn);
 $catModel = new CategoriaModel($conn);
+$marcaModel = new MarcaModel($conn);
 $repModel = new RepuestoModel($conn);
 
-$marcas = $marcaModel->getAll();
-$categorias = $catModel->getAll();
-$modelos = $repModel->getModelos();
+// Traer todas las categorías con su conteo de repuestos activos
+$categorias = [];
+try {
+    $query = "SELECT c.*, i.ruta_archivo as imagen_url,
+                     (SELECT COUNT(*) FROM REPUESTO r WHERE r.id_categoria = c.id_categoria AND (r.estado = 'Activo' OR r.estado = 'ACTIVO')) as total_repuestos
+              FROM CATEGORIA c 
+              LEFT JOIN CATEGORIA_IMAGEN ci ON c.id_categoria = ci.id_categoria AND ci.imagen_principal = 1
+              LEFT JOIN IMAGEN i ON ci.id_imagen = i.id_imagen 
+              ORDER BY c.nombre ASC";
+    $resCategorias = $conn->query($query);
+    if ($resCategorias) {
+        while ($c = $resCategorias->fetch_assoc()) {
+            $categorias[] = $c;
+        }
+    }
+} catch (Exception $e) {}
 
-// Filtros
-$search = trim($_GET['search'] ?? '');
-$filterMarca = isset($_GET['marca']) ? (int)$_GET['marca'] : 0;
-$filterCategoria = isset($_GET['categoria']) ? (int)$_GET['categoria'] : 0;
-$filterModelo = trim($_GET['modelo'] ?? '');
-$filterStock = isset($_GET['solo_stock']) ? (int)$_GET['solo_stock'] : 0;
+$defaultCats = [
+    ['nombre' => 'Sistema de motor',         'desc' => 'Pistón, cilindro, culata, válvulas y más',         'icono' => 'fa-solid fa-gears',             'color' => '#1e40af'],
+    ['nombre' => 'Sistema de transmisión',   'desc' => 'Embrague, caja de cambios, transmisión',           'icono' => 'fa-solid fa-arrows-spin',       'color' => '#059669'],
+    ['nombre' => 'Sistema de combustible',   'desc' => 'Carburador, inyección, bomba de combustible',      'icono' => 'fa-solid fa-gas-pump',          'color' => '#d97706'],
+    ['nombre' => 'Sistema eléctrico',        'desc' => 'Batería, encendido, luces, sensores',              'icono' => 'fa-solid fa-bolt',              'color' => '#7c3aed'],
+    ['nombre' => 'Sistema de frenos',        'desc' => 'Freno delantero, freno trasero, ABS',              'icono' => 'fa-solid fa-circle-stop',       'color' => '#dc2626'],
+    ['nombre' => 'Suspensión',               'desc' => 'Horquilla delantera, amortiguador trasero',        'icono' => 'fa-solid fa-arrows-up-down',    'color' => '#0891b2'],
+    ['nombre' => 'Chasis y estructura',      'desc' => 'Cuadro, basculante, soportes',                    'icono' => 'fa-solid fa-screwdriver-wrench', 'color' => '#be185d'],
+    ['nombre' => 'Ruedas y neumáticos',      'desc' => 'Rines, llantas, cámaras, válvulas',               'icono' => 'fa-solid fa-circle-notch',      'color' => '#4338ca'],
+    ['nombre' => 'Carrocería y accesorios',  'desc' => 'Carenados, espejos, direccionales, accesorios',   'icono' => 'fa-solid fa-motorcycle',        'color' => '#9333ea'],
+];
 
-// Paginación
-$porPagina = 12;
-$paginaActual = max(1, (int)($_GET['page'] ?? 1));
-$offset = ($paginaActual - 1) * $porPagina;
-
-// Construir consulta base
-$where = "WHERE (r.estado = 'Activo' OR r.estado = 'ACTIVO')";
-$params = [];
-$types = "";
-
-if (!empty($search)) {
-    $searchTerms = array_filter(explode(' ', $search));
-    foreach ($searchTerms as $term) {
-        $where .= " AND (r.nombre LIKE ? OR r.codigo_barras LIKE ? OR r.codigo_interno LIKE ? OR r.compatibilidades LIKE ? OR r.referencia_fabricante LIKE ? OR m.nombre LIKE ?)";
-        $like = "%$term%";
-        array_push($params, $like, $like, $like, $like, $like, $like);
-        $types .= "ssssss";
+$carrito_total_items = 0;
+if (isset($_SESSION['carrito']) && is_array($_SESSION['carrito'])) {
+    foreach ($_SESSION['carrito'] as $it) {
+        $carrito_total_items += (int)($it['cantidad'] ?? 1);
     }
 }
-
-if ($filterMarca > 0) {
-    $where .= " AND r.id_marca = ?";
-    $params[] = $filterMarca;
-    $types .= "i";
-}
-
-if ($filterCategoria > 0) {
-    $where .= " AND r.id_categoria = ?";
-    $params[] = $filterCategoria;
-    $types .= "i";
-}
-
-if (!empty($filterModelo)) {
-    $where .= " AND r.compatibilidades LIKE ?";
-    $params[] = "%$filterModelo%";
-    $types .= "s";
-}
-
-if ($filterStock === 1) {
-    $where .= " AND r.stock > 0";
-}
-
-// 1. Contar total para paginación
-$countQuery = "SELECT COUNT(r.id_repuesto) as total 
-               FROM REPUESTO r 
-               LEFT JOIN MARCA m ON r.id_marca = m.id_marca 
-               $where";
-
-$stmtCount = $conn->prepare($countQuery);
-if (!empty($params)) {
-    $stmtCount->bind_param($types, ...$params);
-}
-$stmtCount->execute();
-$totalRepuestos = $stmtCount->get_result()->fetch_assoc()['total'] ?? 0;
-$stmtCount->close();
-
-$totalPaginas = max(1, ceil($totalRepuestos / $porPagina));
-
-// 2. Consulta de productos paginados
-$query = "SELECT r.*, m.nombre as marca_nombre, c.nombre as categoria_nombre, 
-                 i.ruta_archivo as imagen_url 
-          FROM REPUESTO r 
-          LEFT JOIN MARCA m ON r.id_marca = m.id_marca 
-          LEFT JOIN CATEGORIA c ON r.id_categoria = c.id_categoria 
-          LEFT JOIN REPUESTO_IMAGEN ri ON r.id_repuesto = ri.id_repuesto AND ri.imagen_principal = 1
-          LEFT JOIN IMAGEN i ON ri.id_imagen = i.id_imagen 
-          $where 
-          ORDER BY r.stock > 0 DESC, r.id_repuesto DESC 
-          LIMIT ? OFFSET ?";
-
-$paramsPagination = $params;
-$typesPagination = $types . "ii";
-$paramsPagination[] = $porPagina;
-$paramsPagination[] = $offset;
-
-$stmt = $conn->prepare($query);
-$stmt->bind_param($typesPagination, ...$paramsPagination);
-$stmt->execute();
-$resRep = $stmt->get_result();
-$repuestos = [];
-while ($r = $resRep->fetch_assoc()) {
-    $repuestos[] = $r;
-}
-$stmt->close();
 ?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Catálogo de Repuestos - Motoverify</title>
+    <title>Motoverify - Catálogo de Categorías por Ubicación</title>
     
+    <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #f8f9fc; color: #333; overflow-x: hidden; }
 
-        .topbar-global {
-            height: 110px; background: #ffffff; border-bottom: 1px solid #eaeaea; position: fixed; top: 0; left: 0; right: 0; z-index: 1050;
-        }
+        /* Topbar Global */
+        .topbar-global { height: 110px; background: #ffffff; border-bottom: 1px solid #eaeaea; position: fixed; top: 0; left: 0; right: 0; z-index: 1050; }
         .topbar-logo { display: inline-flex; align-items: center; height: 100%; text-decoration: none; }
         .topbar-logo img { max-height: 85px; width: auto; object-fit: contain; }
         .search-container { background: #ffffff; border: 1px solid #e0e0e0; border-radius: 12px; padding: 5px 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.02); }
 
+        /* Sidebar */
         .sidebar { width: 260px; background-color: #ffffff; border-right: 1px solid #eaeaea; position: fixed; top: 110px; bottom: 0; left: 0; z-index: 1000; display: flex; flex-direction: column; }
         .nav-item { display: flex; align-items: center; gap: 15px; padding: 12px 20px; color: #4b5563; font-weight: 600; font-size: 1.02rem; text-decoration: none; border-radius: 10px; transition: all 0.2s; margin: 0 16px 8px; }
         .nav-item i { font-size: 1.15rem; width: 20px; text-align: center; }
@@ -136,337 +86,289 @@ $stmt->close();
         .nav-item.active { background-color: #f0f7ff; color: #004ba8; position: relative; }
         .nav-item.active::before { content: ''; position: absolute; left: -16px; top: 10%; height: 80%; width: 4px; background-color: #004ba8; border-radius: 0 4px 4px 0; }
 
-        .main-content { margin-left: 260px; margin-top: 110px; min-height: calc(100vh - 110px); padding: 30px; background-color: #f8f9fc; }
+        /* Main Content */
+        .main-content { margin-left: 260px; margin-top: 110px; min-height: calc(100vh - 110px); display: flex; flex-direction: column; background-color: #f8f9fc; }
 
-        .filter-card { background: #ffffff; border-radius: 14px; padding: 22px; border: 1px solid #f0f1f3; box-shadow: 0 2px 8px rgba(0,0,0,0.02); margin-bottom: 25px; }
+        /* Hero Banner */
+        .hero-banner { background: linear-gradient(135deg, #0640aa 0%, #1e5abf 100%); color: white; position: relative; overflow: hidden; }
+        .hero-banner::before { content: ''; position: absolute; left: 40px; top: 25%; height: 50%; width: 4px; background-color: #60a5fa; border-radius: 4px; }
+        .hero-gears { position: absolute; right: 30px; top: 50%; transform: translateY(-50%); pointer-events: none; }
 
-        .part-card {
-            background: #fff;
-            border-radius: 14px;
-            padding: 18px;
-            border: 1px solid #f0f1f3;
-            display: flex;
-            flex-direction: column;
-            transition: box-shadow 0.2s, transform 0.2s;
-            height: 100%;
+        /* Category List */
+        .section-title { font-weight: 700; font-size: 1.1rem; color: #1e3a8a; margin-bottom: 20px; }
+
+        .cat-item {
+            display: flex; align-items: center; gap: 14px; padding: 12px 14px;
+            border-radius: 14px; transition: all 0.2s; cursor: pointer;
+            margin-bottom: 10px; background: #fff; border: 1px solid #f1f5f9;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+            text-decoration: none; color: inherit;
         }
-        .part-card:hover { box-shadow: 0 10px 24px rgba(0,0,0,0.06); transform: translateY(-3px); }
-        .part-img { width: 100%; height: 160px; object-fit: contain; margin-bottom: 12px; }
-        .part-code { font-weight: 700; color: #111; font-size: 0.95rem; }
-        .part-name { font-size: 0.92rem; color: #374151; font-weight: 500; line-height: 1.35; min-height: 42px; margin-bottom: 6px; }
-        .part-brand { color: #2563eb; font-weight: 600; font-size: 0.85rem; }
-        .part-price { font-size: 1.3rem; font-weight: 800; color: #004ba8; }
-        
-        .stock-badge-in { background-color: #dcfce7; color: #15803d; font-size: 0.75rem; padding: 3px 8px; border-radius: 6px; font-weight: 600; }
-        .stock-badge-out { background-color: #fee2e2; color: #b91c1c; font-size: 0.75rem; padding: 3px 8px; border-radius: 6px; font-weight: 600; }
+        .cat-item:hover { background-color: #f0f4ff; border-color: #bfdbfe; transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,75,168,0.08); }
 
-        .pagination-container .page-link { color: #004ba8; border-radius: 8px; margin: 0 3px; font-weight: 600; }
-        .pagination-container .page-item.active .page-link { background-color: #004ba8; border-color: #004ba8; color: white; }
+        .cat-icon-box {
+            width: 48px; height: 48px; border-radius: 12px; display: flex;
+            align-items: center; justify-content: center; font-size: 1.25rem;
+            color: white; flex-shrink: 0;
+        }
+        .cat-item-info { flex: 1; min-width: 0; }
+        .cat-item-title { font-weight: 700; font-size: 0.95rem; color: #111; margin: 0; }
+        .cat-item-desc { font-size: 0.8rem; color: #6b7280; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        /* Motorcycle diagram area */
+        .moto-diagram-container {
+            background: #ffffff; border: 1px solid #e5e7eb; border-radius: 16px;
+            padding: 24px; position: relative; min-height: 480px; box-shadow: 0 4px 14px rgba(0,0,0,0.03);
+        }
+        .moto-image-wrapper {
+            position: relative; width: 100%; height: 420px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .moto-image-wrapper img {
+            max-width: 88%; max-height: 100%; object-fit: contain;
+            filter: drop-shadow(0 8px 16px rgba(0,0,0,0.1));
+        }
+
+        /* Map labels with connector dots */
+        .map-label {
+            position: absolute; background: white; border: 1.5px solid #3b82f6;
+            color: #1e40af; font-size: 0.76rem; font-weight: 700; padding: 6px 12px;
+            border-radius: 8px; white-space: nowrap; z-index: 5;
+            box-shadow: 0 3px 10px rgba(59,130,246,0.18);
+            cursor: pointer; transition: all 0.2s ease;
+            text-decoration: none;
+        }
+        .map-label:hover {
+            background: #004ba8; color: white; border-color: #004ba8;
+            transform: translateY(-3px) scale(1.04);
+            box-shadow: 0 6px 16px rgba(0,75,168,0.25);
+        }
+        .map-dot {
+            position: absolute; width: 10px; height: 10px; background: #3b82f6;
+            border-radius: 50%; border: 2px solid white; box-shadow: 0 0 0 2px #3b82f6;
+            z-index: 6; animation: pulseDot 2s infinite;
+        }
+
+        @keyframes pulseDot {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
+            70% { transform: scale(1.15); box-shadow: 0 0 0 6px rgba(59, 130, 246, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+        }
+
+        /* Info alert */
+        .info-box {
+            background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px;
+            padding: 16px 20px; display: flex; align-items: flex-start; gap: 14px; margin-top: 20px;
+        }
+        .info-box i { color: #2563eb; font-size: 1.25rem; margin-top: 2px; flex-shrink: 0; }
+        .info-box h6 { font-weight: 700; margin-bottom: 2px; font-size: 0.95rem; color: #1e3a8a; }
+        .info-box p { font-size: 0.85rem; color: #64748b; margin-bottom: 0; }
+
+        @media (max-width: 991px) {
+            .sidebar { transform: translateX(-100%); transition: transform 0.3s; }
+            .sidebar.show { transform: translateX(0); }
+            .main-content { margin-left: 0; }
+            .moto-image-wrapper { height: 320px; }
+        }
     </style>
 </head>
 <body>
 
+    <!-- TOPBAR COMPONENT -->
     <?php require_once 'topbar.php'; ?>
+
+    <!-- SIDEBAR COMPONENT -->
     <?php require_once 'sidebar.php'; ?>
 
+    <!-- MAIN CONTENT -->
     <main class="main-content">
-        <?php if (!$is_cliente_auth): ?>
-            <!-- Banner informativo para usuarios invitados / sin sesión -->
-            <div class="alert alert-info border-0 shadow-sm d-flex flex-column flex-md-row align-items-md-center justify-content-between p-3 rounded-4 mb-4 gap-3" style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 44px; height: 44px;">
-                        <i class="fa-solid fa-magnifying-glass fs-5"></i>
-                    </div>
-                    <div>
-                        <h6 class="fw-bold text-primary mb-1">Consulta libre de repuestos y fichas técnicas</h6>
-                        <p class="text-secondary small mb-0">Estás explorando el catálogo como invitado. Puedes consultar especificaciones, compatibilidades, fotos y disponibilidad. Para comprar o guardar en tu carrito permanente, inicia sesión o crea tu cuenta.</p>
-                    </div>
-                </div>
-                <div class="d-flex align-items-center gap-2 flex-shrink-0">
-                    <a href="../../public/index.php?register=1" class="btn btn-primary btn-sm fw-semibold rounded-pill px-3 py-2 shadow-sm" style="background: #004ba8; border: none;">
-                        <i class="fa-solid fa-user-plus me-1"></i> Registrarse
-                    </a>
-                    <a href="../../public/index.php?login=1" class="btn btn-outline-primary btn-sm fw-semibold rounded-pill px-3 py-2">
-                        <i class="fa-solid fa-arrow-right-to-bracket me-1"></i> Iniciar Sesión
-                    </a>
-                </div>
-            </div>
-        <?php endif; ?>
+        <div class="p-4 flex-grow-1">
 
-        <!-- Título y breadcrumb -->
-        <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
-            <div>
-                <h2 class="fw-bold mb-1 text-dark">Catálogo de Repuestos</h2>
-                <p class="text-muted mb-0">Explora todos los repuestos originales disponibles para tu motocicleta.</p>
-            </div>
-            <a href="carrito.php" class="btn btn-outline-primary fw-semibold rounded-pill px-4 d-flex align-items-center gap-2">
-                <i class="fa-solid fa-cart-shopping"></i> Ver Mi Carrito 
-                <span class="badge bg-primary rounded-pill cart-badge-count <?= $carrito_total_items > 0 ? '' : 'd-none' ?>">
-                    <?= $carrito_total_items ?>
-                </span>
-            </a>
-        </div>
-
-        <!-- Filtros Interactivos -->
-        <div class="filter-card">
-            <form method="GET" action="catalogo.php" id="filterForm">
-                <div class="row g-3 align-items-end">
-                    <!-- Búsqueda textual -->
-                    <div class="col-12 col-md-4">
-                        <label class="form-label small fw-semibold text-muted">Buscar producto o referencia</label>
-                        <div class="input-group">
-                            <span class="input-group-text bg-light border-end-0"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
-                            <input type="text" name="search" class="form-control border-start-0 ps-0" placeholder="Ej: Bujía, Pastillas, Pulsar 200..." value="<?= htmlspecialchars($search) ?>">
+            <?php if (!$is_cliente_auth): ?>
+                <!-- Banner informativo para usuarios invitados / sin sesión -->
+                <div class="alert alert-info border-0 shadow-sm d-flex flex-column flex-md-row align-items-md-center justify-content-between p-3 rounded-4 mb-4 gap-3" style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 44px; height: 44px;">
+                            <i class="fa-solid fa-magnifying-glass fs-5"></i>
+                        </div>
+                        <div>
+                            <h6 class="fw-bold text-primary mb-1">Catálogo de Categorías Abierto para Visitantes</h6>
+                            <p class="text-secondary small mb-0">Explora las partes de la motocicleta y consulta qué repuestos pertenecen a cada sistema técnico sin necesidad de iniciar sesión.</p>
                         </div>
                     </div>
-
-                    <!-- Filtro Marca -->
-                    <div class="col-6 col-md-2">
-                        <label class="form-label small fw-semibold text-muted">Marca</label>
-                        <select name="marca" class="form-select">
-                            <option value="0">Todas las marcas</option>
-                            <?php foreach ($marcas as $m): ?>
-                                <option value="<?= $m['id'] ?>" <?= $filterMarca == $m['id'] ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars($m['nombre']) ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-
-                    <!-- Filtro Categoría -->
-                    <div class="col-6 col-md-2">
-                        <label class="form-label small fw-semibold text-muted">Categoría</label>
-                        <select name="categoria" class="form-select">
-                            <option value="0">Todas las categorías</option>
-                            <?php foreach ($categorias as $c): ?>
-                                <option value="<?= $c['id'] ?>" <?= $filterCategoria == $c['id'] ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars($c['nombre']) ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-
-                    <!-- Filtro Modelo Moto -->
-                    <div class="col-6 col-md-2">
-                        <label class="form-label small fw-semibold text-muted">Modelo de Moto</label>
-                        <select name="modelo" class="form-select">
-                            <option value="">Todos los modelos</option>
-                            <?php foreach ($modelos as $mo): ?>
-                                <option value="<?= htmlspecialchars($mo['modelo_moto']) ?>" <?= $filterModelo === $mo['modelo_moto'] ? 'selected' : '' ?>>
-                                    <?= htmlspecialchars($mo['modelo_moto']) ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-
-                    <!-- Botones de Acción -->
-                    <div class="col-6 col-md-2 d-flex gap-2">
-                        <button type="submit" class="btn btn-primary w-100 fw-semibold rounded-3 d-flex align-items-center justify-content-center gap-2">
-                            <i class="fa-solid fa-filter"></i> Filtrar
-                        </button>
-                        <a href="catalogo.php" class="btn btn-outline-secondary rounded-3" title="Limpiar filtros">
-                            <i class="fa-solid fa-rotate-left"></i>
+                    <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                        <a href="../../public/index.php?register=1" class="btn btn-primary btn-sm fw-semibold rounded-pill px-3 py-2 shadow-sm" style="background: #004ba8; border: none;">
+                            <i class="fa-solid fa-user-plus me-1"></i> Registrarse
+                        </a>
+                        <a href="../../public/index.php?login=1" class="btn btn-outline-primary btn-sm fw-semibold rounded-pill px-3 py-2">
+                            <i class="fa-solid fa-arrow-right-to-bracket me-1"></i> Iniciar Sesión
                         </a>
                     </div>
                 </div>
-
-                <!-- Checkbox solo con stock -->
-                <div class="mt-3 d-flex align-items-center gap-3">
-                    <div class="form-check form-switch mb-0">
-                        <input class="form-check-input" type="checkbox" role="switch" id="switchStock" name="solo_stock" value="1" <?= $filterStock === 1 ? 'checked' : '' ?> onchange="document.getElementById('filterForm').submit()">
-                        <label class="form-check-label small fw-semibold text-muted" for="switchStock">Mostrar únicamente productos con stock disponible</label>
-                    </div>
-                    <span class="text-muted small ms-auto">Mostrando <strong><?= count($repuestos) ?></strong> de <strong><?= $totalRepuestos ?></strong> resultados</span>
-                </div>
-            </form>
-        </div>
-
-        <!-- Grid de Productos -->
-        <div class="row g-4 mb-4">
-            <?php if (empty($repuestos)): ?>
-                <div class="col-12 text-center py-5">
-                    <div class="bg-white rounded-4 p-5 border text-center">
-                        <i class="fa-solid fa-magnifying-glass fs-1 text-primary opacity-50 mb-3"></i>
-                        <h4 class="fw-bold text-dark">No se encontraron repuestos</h4>
-                        <p class="text-muted">Intenta ajustando los términos de búsqueda o limpiando los filtros seleccionados.</p>
-                        <a href="catalogo.php" class="btn btn-primary rounded-pill px-4 mt-2">
-                            <i class="fa-solid fa-rotate-left me-1"></i> Restablecer Catálogo
-                        </a>
-                    </div>
-                </div>
-            <?php else: ?>
-                <?php foreach ($repuestos as $r): 
-                    $tieneStock = ($r['stock'] > 0);
-                ?>
-                    <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
-                        <div class="part-card shadow-sm">
-                            <!-- Foto del producto -->
-                            <div class="text-center p-3 mb-2 bg-light rounded-3 position-relative overflow-hidden">
-                                <?php if (!empty($r['imagen_url'])): ?>
-                                    <img src="../../<?= htmlspecialchars($r['imagen_url']); ?>" alt="<?= htmlspecialchars($r['nombre']); ?>" class="part-img">
-                                <?php else: ?>
-                                    <div class="part-img d-flex align-items-center justify-content-center text-secondary">
-                                        <i class="fa-solid fa-motorcycle fs-1 opacity-25"></i>
-                                    </div>
-                                <?php endif; ?>
-
-                                <?php if (!empty($r['categoria_nombre'])): ?>
-                                    <span class="position-absolute top-0 start-0 m-2 badge bg-white text-dark shadow-sm border" style="font-size: 0.72rem;">
-                                        <?= htmlspecialchars($r['categoria_nombre']) ?>
-                                    </span>
-                                <?php endif; ?>
-                            </div>
-
-                            <!-- Cabecera de tarjeta -->
-                            <div class="d-flex justify-content-between align-items-center mb-1">
-                                <span class="part-brand"><?= htmlspecialchars($r['marca_nombre'] ?? 'Genérico') ?></span>
-                                <?php if ($tieneStock): ?>
-                                    <span class="stock-badge-in">
-                                        <i class="fa-solid fa-circle-check me-1"></i> Stock: <?= $r['stock'] ?>
-                                    </span>
-                                <?php else: ?>
-                                    <span class="stock-badge-out">
-                                        <i class="fa-solid fa-circle-xmark me-1"></i> Agotado
-                                    </span>
-                                <?php endif; ?>
-                            </div>
-
-                            <div class="part-code"><?= htmlspecialchars($r['codigo_interno']) ?></div>
-                            <h5 class="part-name" title="<?= htmlspecialchars($r['nombre']) ?>">
-                                <?= htmlspecialchars($r['nombre']) ?>
-                            </h5>
-
-                            <?php if (!empty($r['compatibilidades'])): ?>
-                                <p class="text-muted small mb-3 text-truncate" style="font-size: 0.8rem;">
-                                    <i class="fa-solid fa-wrench me-1"></i> <?= htmlspecialchars($r['compatibilidades']) ?>
-                                </p>
-                            <?php endif; ?>
-
-                            <!-- Footer de tarjeta con Precio y Botón de Carrito -->
-                            <div class="d-flex align-items-center justify-content-between pt-2 border-top mt-auto">
-                                <div class="part-price">
-                                    $<?= number_format($r['precio'], 0, ',', '.') ?>
-                                </div>
-                                <div class="d-flex gap-2">
-                                    <a href="detalle_producto.php?id=<?= $r['id_repuesto'] ?>" class="btn btn-sm btn-outline-secondary rounded-pill px-2" title="Ver ficha técnica completa">
-                                        <i class="fa-solid fa-circle-info"></i>
-                                    </a>
-                                    <?php if ($tieneStock): ?>
-                                        <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 d-flex align-items-center gap-1 btn-add-cart" data-id="<?= $r['id_repuesto'] ?>">
-                                            <i class="fa-solid fa-cart-plus"></i> Añadir
-                                        </button>
-                                    <?php else: ?>
-                                        <button type="button" class="btn btn-sm btn-secondary rounded-pill px-3 opacity-50" disabled>
-                                            Agotado
-                                        </button>
-                                    <?php endif; ?>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                <?php endforeach; ?>
             <?php endif; ?>
-        </div>
 
-        <!-- Paginación -->
-        <?php if ($totalPaginas > 1): ?>
-            <div class="d-flex justify-content-center my-4 pagination-container">
-                <nav>
-                    <ul class="pagination">
-                        <?php if ($paginaActual > 1): ?>
-                            <li class="page-item">
-                                <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['page' => $paginaActual - 1])) ?>">
-                                    <i class="fa-solid fa-chevron-left"></i> Anterior
-                                </a>
-                            </li>
-                        <?php endif; ?>
-
-                        <?php for ($i = 1; $i <= $totalPaginas; $i++): ?>
-                            <?php if ($i == 1 || $i == $totalPaginas || ($i >= $paginaActual - 2 && $i <= $paginaActual + 2)): ?>
-                                <li class="page-item <?= $i == $paginaActual ? 'active' : '' ?>">
-                                    <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['page' => $i])) ?>"><?= $i ?></a>
-                                </li>
-                            <?php elseif ($i == $paginaActual - 3 || $i == $paginaActual + 3): ?>
-                                <li class="page-item disabled"><span class="page-link">...</span></li>
-                            <?php endif; ?>
-                        <?php endfor; ?>
-
-                        <?php if ($paginaActual < $totalPaginas): ?>
-                            <li class="page-item">
-                                <a class="page-link" href="?<?= http_build_query(array_merge($_GET, ['page' => $paginaActual + 1])) ?>">
-                                    Siguiente <i class="fa-solid fa-chevron-right"></i>
-                                </a>
-                            </li>
-                        <?php endif; ?>
-                    </ul>
-                </nav>
+            <!-- Hero Banner -->
+            <div class="hero-banner rounded-4 p-4 ps-5 mb-4 d-flex flex-wrap align-items-center justify-content-between shadow-sm gap-3">
+                <div class="position-relative" style="z-index: 2; padding-left: 15px;">
+                    <h2 class="fw-bold mb-2 d-flex align-items-center gap-3">
+                        <i class="fa-solid fa-book-open" style="font-size: 1.4rem; opacity: .9;"></i>
+                        Catálogo de Repuestos
+                    </h2>
+                    <p class="mb-0 opacity-75" style="font-size: 1rem;">Consulta las categorías de repuestos clasificadas por su ubicación en la motocicleta.</p>
+                </div>
+                <div class="d-flex align-items-center gap-2" style="z-index: 2;">
+                    <a href="repuestos.php" class="btn btn-light fw-bold text-primary rounded-pill px-4 py-2 shadow-sm d-flex align-items-center gap-2">
+                        <i class="fa-solid fa-puzzle-piece"></i> Ver Todos los Repuestos
+                    </a>
+                </div>
+                <div class="hero-gears d-none d-lg-block">
+                    <i class="fa-solid fa-gear" style="font-size: 110px; color: rgba(255,255,255,0.08); position: absolute; right: 0; top: -55px;"></i>
+                    <i class="fa-solid fa-gear" style="font-size: 65px; color: rgba(255,255,255,0.06); position: absolute; right: 85px; top: -25px;"></i>
+                </div>
             </div>
-        <?php endif; ?>
 
+            <!-- Main Two-Column Layout -->
+            <div class="row g-4">
+
+                <!-- Left Column: Categories -->
+                <div class="col-12 col-xl-5 col-xxl-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <h5 class="section-title mb-0">Categorías por ubicación</h5>
+                        <span class="badge bg-white text-muted border px-2 py-1 small"><?= count($categorias) ?> registradas</span>
+                    </div>
+
+                    <?php if (empty($categorias)): ?>
+                        <!-- Categorías iniciales por defecto cuando la BD está vacía -->
+                        <?php foreach ($defaultCats as $dc): ?>
+                        <div class="cat-item" onclick="searchCategory('<?= addslashes($dc['nombre']) ?>')">
+                            <div class="cat-icon-box" style="background-color: <?= $dc['color']; ?>;">
+                                <i class="<?= $dc['icono']; ?>"></i>
+                            </div>
+                            <div class="cat-item-info">
+                                <p class="cat-item-title"><?= $dc['nombre']; ?></p>
+                                <p class="cat-item-desc"><?= $dc['desc']; ?></p>
+                            </div>
+                            <i class="fa-solid fa-chevron-right text-muted opacity-50 ms-2"></i>
+                        </div>
+                        <?php endforeach; ?>
+                    <?php else: ?>
+                        <?php
+                        $palette = ['#1e40af','#059669','#d97706','#7c3aed','#dc2626','#0891b2','#be185d','#4338ca','#9333ea'];
+                        $idx = 0;
+                        foreach ($categorias as $cat):
+                            $bgColor = $palette[$idx % count($palette)];
+                            $idx++;
+                            $countRep = (int)($cat['total_repuestos'] ?? 0);
+                        ?>
+                        <a href="repuestos.php?categoria=<?= $cat['id_categoria']; ?>" class="cat-item" title="Ver repuestos de <?= htmlspecialchars($cat['nombre']) ?>">
+                            <div class="cat-icon-box" style="background-color: <?= $bgColor; ?>; overflow: hidden; padding: 6px;">
+                                <?php if(!empty($cat['imagen_url'])): ?>
+                                    <img src="../../<?= htmlspecialchars($cat['imagen_url']); ?>" alt="Icono" style="width: 100%; height: 100%; object-fit: contain;">
+                                <?php else: ?>
+                                    <i class="fa-solid fa-cube"></i>
+                                <?php endif; ?>
+                            </div>
+                            <div class="cat-item-info ms-2">
+                                <div class="d-flex align-items-center justify-content-between">
+                                    <p class="cat-item-title mb-0"><?= htmlspecialchars($cat['nombre']); ?></p>
+                                    <span class="badge rounded-pill bg-light text-secondary border small" style="font-size: 0.72rem;">
+                                        <?= $countRep ?> repuesto<?= $countRep !== 1 ? 's' : '' ?>
+                                    </span>
+                                </div>
+                                <p class="cat-item-desc mb-0 mt-1" title="<?= htmlspecialchars($cat['descripcion'] ?? ''); ?>">
+                                    <?= htmlspecialchars($cat['descripcion'] ?? 'Repuestos de alta calidad y rendimiento.'); ?>
+                                </p>
+                            </div>
+                            <i class="fa-solid fa-arrow-right text-primary opacity-75 ms-2"></i>
+                        </a>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </div>
+
+                <!-- Right Column: Motorcycle Diagram -->
+                <div class="col-12 col-xl-7 col-xxl-8">
+                    <h5 class="section-title">Ubicación en la motocicleta</h5>
+
+                    <div class="moto-diagram-container">
+                        <div class="moto-image-wrapper">
+                            <img src="../../public/assets/images/motorcycle_diagram.png" alt="Diagrama de motocicleta" onerror="this.src='https://via.placeholder.com/700x400?text=Motocicleta';">
+
+                            <!-- Labels positioned around motorcycle -->
+                            <div class="map-label" style="top: 8%; left: 15%;" onclick="searchCategory('Sistema de combustible')">
+                                <i class="fa-solid fa-gas-pump me-1"></i> Sistema de combustible
+                            </div>
+                            <div class="map-dot" style="top: 28%; left: 38%;"></div>
+
+                            <div class="map-label" style="top: 8%; right: 8%;" onclick="searchCategory('Sistema de motor')">
+                                <i class="fa-solid fa-gears me-1"></i> Sistema de motor
+                            </div>
+                            <div class="map-dot" style="top: 32%; right: 30%;"></div>
+
+                            <div class="map-label" style="top: 38%; left: 5%;" onclick="searchCategory('Sistema eléctrico')">
+                                <i class="fa-solid fa-bolt me-1"></i> Sistema eléctrico
+                            </div>
+                            <div class="map-dot" style="top: 42%; left: 28%;"></div>
+
+                            <div class="map-label" style="top: 38%; right: 0%;" onclick="searchCategory('Suspensión')">
+                                <i class="fa-solid fa-arrows-up-down me-1"></i> Suspensión
+                            </div>
+                            <div class="map-dot" style="top: 45%; right: 18%;"></div>
+
+                            <div class="map-label" style="top: 62%; left: 8%;" onclick="searchCategory('Sistema de frenos')">
+                                <i class="fa-solid fa-circle-stop me-1"></i> Sistema de frenos
+                            </div>
+                            <div class="map-dot" style="top: 60%; left: 30%;"></div>
+
+                            <div class="map-label" style="top: 62%; right: 0%;" onclick="searchCategory('Sistema de transmisión')">
+                                <i class="fa-solid fa-arrows-spin me-1"></i> Sistema de transmisión
+                            </div>
+                            <div class="map-dot" style="top: 58%; right: 22%;"></div>
+
+                            <div class="map-label" style="bottom: 12%; left: 15%;" onclick="searchCategory('Ruedas y neumáticos')">
+                                <i class="fa-solid fa-circle-notch me-1"></i> Ruedas y neumáticos
+                            </div>
+                            <div class="map-dot" style="bottom: 18%; left: 32%;"></div>
+
+                            <div class="map-label" style="bottom: 5%; left: 38%;" onclick="searchCategory('Carrocería y accesorios')">
+                                <i class="fa-solid fa-motorcycle me-1"></i> Carrocería y accesorios
+                            </div>
+
+                            <div class="map-label" style="bottom: 12%; right: 5%;" onclick="searchCategory('Chasis y estructura')">
+                                <i class="fa-solid fa-screwdriver-wrench me-1"></i> Chasis y estructura
+                            </div>
+                            <div class="map-dot" style="bottom: 22%; right: 25%;"></div>
+                        </div>
+
+                        <div class="info-box">
+                            <i class="fa-solid fa-circle-info"></i>
+                            <div>
+                                <h6>Información para Clientes</h6>
+                                <p>Selecciona una categoría o pulsa sobre la parte correspondiente en la motocicleta para ver los repuestos disponibles, especificaciones técnicas y adquirirlos en línea.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </main>
 
+    <!-- Scripts necesarios -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-    document.querySelectorAll('.btn-add-cart').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const id = this.dataset.id;
-            const originalHTML = this.innerHTML;
-            this.disabled = true;
-            this.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
-
-            fetch('../../controllers/cliente_pedido_action.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'agregar_carrito', id_repuesto: id, cantidad: 1 })
-            })
-            .then(res => res.json())
-            .then(data => {
-                this.disabled = false;
-                this.innerHTML = originalHTML;
-
-                if (data.status === 'success') {
-                    document.querySelectorAll('.cart-badge-count').forEach(el => {
-                        el.textContent = data.total_articulos;
-                        el.classList.remove('d-none');
-                    });
-
-                    <?php if (!$is_cliente_auth): ?>
-                    Swal.fire({
-                        icon: 'success',
-                        title: '¡Añadido a tu carrito de invitado!',
-                        text: 'El repuesto se guardó en tu carrito temporal. Recuerda iniciar sesión o crear tu cuenta para finalizar tu compra y recibirlo a domicilio.',
-                        showCancelButton: true,
-                        confirmButtonColor: '#004ba8',
-                        cancelButtonColor: '#6c757d',
-                        confirmButtonText: '<i class="fa-solid fa-arrow-right-to-bracket me-1"></i> Iniciar Sesión para Comprar',
-                        cancelButtonText: 'Seguir mirando'
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            window.location.href = '../../public/index.php?login=1';
-                        }
-                    });
-                    <?php else: ?>
-                    Swal.fire({
-                        toast: true,
-                        position: 'top-end',
-                        icon: 'success',
-                        title: data.message,
-                        showConfirmButton: false,
-                        timer: 2500,
-                        timerProgressBar: true
-                    });
-                    <?php endif; ?>
-                } else {
-                    Swal.fire({ icon: 'warning', title: 'Atención', text: data.message });
-                }
-            })
-            .catch(err => {
-                this.disabled = false;
-                this.innerHTML = originalHTML;
-                Swal.fire({ icon: 'error', title: 'Error', text: 'Error de conexión.' });
-            });
-        });
-    });
+        function searchCategory(name) {
+            const categoryMap = {
+                <?php foreach($categorias as $c): ?>
+                "<?= strtolower(trim($c['nombre'])); ?>": <?= $c['id_categoria']; ?>,
+                <?php endforeach; ?>
+            };
+            
+            let key = name.toLowerCase().trim();
+            if (categoryMap[key]) {
+                window.location.href = 'repuestos.php?categoria=' + categoryMap[key];
+            } else {
+                window.location.href = 'repuestos.php?search=' + encodeURIComponent(name);
+            }
+        }
     </script>
 </body>
 </html>
