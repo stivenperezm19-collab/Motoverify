@@ -12,17 +12,17 @@ if (isset($_SESSION['carrito']) && is_array($_SESSION['carrito'])) {
 <!-- ===== TOPBAR CLIENTE / CONSULTA PÚBLICA ===== -->
 <header class="topbar-global px-4 d-flex align-items-center justify-content-between">
     <!-- Logo Motoverify -->
-    <a href="<?= $is_cliente_auth ? 'dashboard.php' : 'catalogo.php' ?>" class="topbar-logo text-decoration-none">
+    <a href="<?= $is_cliente_auth ? 'dashboard.php' : 'repuestos.php' ?>" class="topbar-logo text-decoration-none">
         <img src="../../public/assets/images/logo_motoverify.png?v=<?= time() ?>" alt="Motoverify">
     </a>
 
-    <!-- Buscador en tiempo real hacia el Catálogo -->
+    <!-- Buscador en tiempo real hacia Repuestos -->
     <div class="d-flex align-items-center gap-3">
-        <form action="catalogo.php" method="GET" class="search-container d-flex align-items-center d-none d-md-flex" style="width: 380px; margin-bottom: 0;">
+        <form action="repuestos.php" method="GET" class="search-container d-flex align-items-center d-none d-md-flex" style="width: 380px; margin-bottom: 0;">
             <i class="fa-solid fa-magnifying-glass text-muted me-2"></i>
             <input type="text" name="search" class="form-control" placeholder="Buscar repuestos, marcas o modelos..." value="<?= htmlspecialchars($_GET['search'] ?? '') ?>" style="background:transparent; border:none; box-shadow:none;">
             <?php if (!empty($_GET['search'])): ?>
-                <a href="catalogo.php" class="text-muted text-decoration-none ms-2"><i class="fa-solid fa-xmark"></i></a>
+                <a href="repuestos.php" class="text-muted text-decoration-none ms-2"><i class="fa-solid fa-xmark"></i></a>
             <?php endif; ?>
         </form>
 
@@ -53,7 +53,8 @@ if (isset($_SESSION['carrito']) && is_array($_SESSION['carrito'])) {
                         <p class="mb-0 text-muted small text-truncate"><?= htmlspecialchars($cliente_email) ?></p>
                     </li>
                     <li><a class="dropdown-item py-2" href="dashboard.php"><i class="fa-solid fa-house me-2 text-primary"></i>Panel de Inicio</a></li>
-                    <li><a class="dropdown-item py-2" href="catalogo.php"><i class="fa-solid fa-book-open me-2 text-primary"></i>Catálogo de Productos</a></li>
+                    <li><a class="dropdown-item py-2" href="repuestos.php"><i class="fa-solid fa-puzzle-piece me-2 text-primary"></i>Repuestos Disponibles</a></li>
+                    <li><a class="dropdown-item py-2" href="catalogo.php"><i class="fa-solid fa-book-open me-2 text-primary"></i>Catálogo de Categorías</a></li>
                     <li><a class="dropdown-item py-2" href="carrito.php"><i class="fa-solid fa-cart-shopping me-2 text-primary"></i>Mi Carrito</a></li>
                     <li><a class="dropdown-item py-2" href="historial_compras.php"><i class="fa-solid fa-clock-rotate-left me-2 text-primary"></i>Mis Pedidos</a></li>
                     <li><a class="dropdown-item py-2" href="perfil.php"><i class="fa-solid fa-user-gear me-2 text-primary"></i>Mi Perfil</a></li>

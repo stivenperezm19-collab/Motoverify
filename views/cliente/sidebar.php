@@ -28,12 +28,12 @@ if (isset($_SESSION['carrito']) && is_array($_SESSION['carrito'])) {
             </a>
         <?php endif; ?>
 
-        <a href="catalogo.php" class="nav-item <?= $current_page == 'catalogo.php' ? 'active' : '' ?>" title="Categorías y diagrama de ubicación en la moto">
-            <i class="fa-solid fa-book-open"></i> Catálogo
-        </a>
-
         <a href="repuestos.php" class="nav-item <?= $current_page == 'repuestos.php' ? 'active' : '' ?>" title="Tienda de repuestos">
             <i class="fa-solid fa-puzzle-piece"></i> Repuestos
+        </a>
+
+        <a href="catalogo.php" class="nav-item <?= $current_page == 'catalogo.php' ? 'active' : '' ?>" title="Categorías y diagrama de ubicación en la moto">
+            <i class="fa-solid fa-book-open"></i> Catálogo
         </a>
 
         <a href="carrito.php" class="nav-item <?= $current_page == 'carrito.php' ? 'active' : '' ?>">
