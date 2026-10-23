@@ -1,9 +1,6 @@
 <?php
 session_start();
-if (!isset($_SESSION['user_id']) || !isset($_SESSION['rol']) || $_SESSION['rol'] !== 'Cliente') {
-    header('Location: ../../public/index.php');
-    exit;
-}
+$is_cliente_auth = isset($_SESSION['user_id']) && isset($_SESSION['rol']) && $_SESSION['rol'] === 'Cliente';
 
 require_once '../../config/database.php';
 
@@ -226,9 +223,18 @@ $total = $subtotal + $impuestos;
                             </div>
                         </div>
 
-                        <a href="checkout.php" class="btn btn-success btn-lg w-100 rounded-pill py-3 fw-bold d-flex align-items-center justify-content-center gap-2 shadow-sm mb-3">
-                            <i class="fa-solid fa-shield-check"></i> Proceder al Pago
-                        </a>
+                        <?php if ($is_cliente_auth): ?>
+                            <a href="checkout.php" class="btn btn-success btn-lg w-100 rounded-pill py-3 fw-bold d-flex align-items-center justify-content-center gap-2 shadow-sm mb-3">
+                                <i class="fa-solid fa-shield-check"></i> Proceder al Pago
+                            </a>
+                        <?php else: ?>
+                            <a href="../../public/index.php?login=1" class="btn btn-primary btn-lg w-100 rounded-pill py-3 fw-bold d-flex align-items-center justify-content-center gap-2 shadow-sm mb-2" style="background: #004ba8; border: none;">
+                                <i class="fa-solid fa-arrow-right-to-bracket"></i> Inicia Sesión para Comprar
+                            </a>
+                            <p class="text-center text-muted small mb-3">
+                                ¿No tienes cuenta? <a href="../../public/index.php?register=1" class="text-primary fw-bold text-decoration-none">Regístrate gratis</a>
+                            </p>
+                        <?php endif; ?>
 
                         <div class="text-center text-muted small">
                             <p class="mb-1"><i class="fa-solid fa-truck-fast text-primary me-1"></i> Envío rápido con pago Contra Entrega</p>

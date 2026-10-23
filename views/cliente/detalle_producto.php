@@ -1,9 +1,6 @@
 <?php
 session_start();
-if (!isset($_SESSION['user_id']) || !isset($_SESSION['rol']) || $_SESSION['rol'] !== 'Cliente') {
-    header('Location: ../../public/index.php');
-    exit;
-}
+$is_cliente_auth = isset($_SESSION['user_id']) && isset($_SESSION['rol']) && $_SESSION['rol'] === 'Cliente';
 
 require_once '../../config/database.php';
 
@@ -127,7 +124,7 @@ if ($resRel) {
         <!-- Breadcrumb de navegación -->
         <nav aria-label="breadcrumb" class="mb-3">
             <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="dashboard.php" class="text-decoration-none">Inicio</a></li>
+                <li class="breadcrumb-item"><a href="<?= $is_cliente_auth ? 'dashboard.php' : '../../public/index.php' ?>" class="text-decoration-none">Inicio</a></li>
                 <li class="breadcrumb-item"><a href="catalogo.php" class="text-decoration-none">Catálogo</a></li>
                 <?php if (!empty($repuesto['categoria_nombre'])): ?>
                     <li class="breadcrumb-item"><a href="catalogo.php?categoria=<?= $repuesto['id_categoria'] ?>" class="text-decoration-none"><?= htmlspecialchars($repuesto['categoria_nombre']) ?></a></li>
@@ -200,25 +197,53 @@ if ($resRel) {
                         </div>
 
                         <!-- Selector de Cantidad y Botones de Compra -->
+                        <!-- Selector de Cantidad y Botones de Compra -->
                         <?php if ($repuesto['stock'] > 0): ?>
-                            <div class="d-flex align-items-center gap-3 mb-4">
-                                <label class="fw-semibold text-dark mb-0">Cantidad:</label>
-                                <div class="input-group qty-input-group">
-                                    <button class="btn btn-outline-secondary qty-btn" type="button" onclick="decrementQty()">-</button>
-                                    <input type="number" id="buyQuantity" class="form-control text-center fw-bold" value="1" min="1" max="<?= $repuesto['stock'] ?>" readonly>
-                                    <button class="btn btn-outline-secondary qty-btn" type="button" onclick="incrementQty(<?= $repuesto['stock'] ?>)">+</button>
+                            <?php if ($is_cliente_auth): ?>
+                                <div class="d-flex align-items-center gap-3 mb-4">
+                                    <label class="fw-semibold text-dark mb-0">Cantidad:</label>
+                                    <div class="input-group qty-input-group">
+                                        <button class="btn btn-outline-secondary qty-btn" type="button" onclick="decrementQty()">-</button>
+                                        <input type="number" id="buyQuantity" class="form-control text-center fw-bold" value="1" min="1" max="<?= $repuesto['stock'] ?>" readonly>
+                                        <button class="btn btn-outline-secondary qty-btn" type="button" onclick="incrementQty(<?= $repuesto['stock'] ?>)">+</button>
+                                    </div>
+                                    <span class="text-muted small">Máx. <?= $repuesto['stock'] ?></span>
                                 </div>
-                                <span class="text-muted small">Máx. <?= $repuesto['stock'] ?></span>
-                            </div>
 
-                            <div class="d-flex flex-wrap gap-3 mb-4">
-                                <button type="button" class="btn btn-primary btn-lg rounded-pill px-4 d-flex align-items-center gap-2 fw-semibold shadow-sm" id="btnAddToCart">
-                                    <i class="fa-solid fa-cart-plus"></i> Añadir al Carrito
-                                </button>
-                                <button type="button" class="btn btn-success btn-lg rounded-pill px-4 d-flex align-items-center gap-2 fw-semibold shadow-sm" id="btnBuyNow">
-                                    <i class="fa-solid fa-bolt"></i> Comprar Ahora
-                                </button>
-                            </div>
+                                <div class="d-flex flex-wrap gap-3 mb-4">
+                                    <button type="button" class="btn btn-primary btn-lg rounded-pill px-4 d-flex align-items-center gap-2 fw-semibold shadow-sm" id="btnAddToCart">
+                                        <i class="fa-solid fa-cart-plus"></i> Añadir al Carrito
+                                    </button>
+                                    <button type="button" class="btn btn-success btn-lg rounded-pill px-4 d-flex align-items-center gap-2 fw-semibold shadow-sm" id="btnBuyNow">
+                                        <i class="fa-solid fa-bolt"></i> Comprar Ahora
+                                    </button>
+                                </div>
+                            <?php else: ?>
+                                <!-- Tarjeta de compra restringida para invitados -->
+                                <div class="card border-primary-subtle p-3 rounded-4 shadow-sm mb-4" style="background: linear-gradient(135deg, #f8fafc 0%, #eff6ff 100%);">
+                                    <div class="d-flex align-items-center gap-2 mb-2">
+                                        <span class="badge rounded-pill bg-primary px-3 py-1 text-white">
+                                            <i class="fa-solid fa-lock me-1"></i> Compra disponible para clientes
+                                        </span>
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1">
+                                            <i class="fa-solid fa-check-circle me-1"></i> En Stock (<?= $repuesto['stock'] ?> disp.)
+                                        </span>
+                                    </div>
+                                    <h6 class="fw-bold text-dark mb-1">Inicia sesión para ordenar este repuesto</h6>
+                                    <p class="text-muted small mb-3">Para realizar pedidos, seleccionar métodos de entrega y recibir despacho en tiempo real, accede con tu cuenta o crea una nueva.</p>
+                                    <div class="d-flex flex-wrap gap-2">
+                                        <a href="../../public/index.php?login=1" class="btn btn-primary fw-semibold rounded-pill px-4 py-2 d-inline-flex align-items-center gap-2 shadow-sm" style="background: #004ba8; border: none;">
+                                            <i class="fa-solid fa-arrow-right-to-bracket"></i> Iniciar Sesión
+                                        </a>
+                                        <a href="../../public/index.php?register=1" class="btn btn-outline-primary fw-semibold rounded-pill px-4 py-2 d-inline-flex align-items-center gap-2">
+                                            <i class="fa-solid fa-user-plus"></i> Crear Cuenta Gratis
+                                        </a>
+                                        <button type="button" class="btn btn-outline-secondary rounded-pill px-3 py-2 btn-guest-cart" data-id="<?= $repuesto['id_repuesto'] ?>" title="Añadir a carrito temporal">
+                                            <i class="fa-solid fa-cart-plus me-1"></i> Añadir como Invitado
+                                        </button>
+                                    </div>
+                                </div>
+                            <?php endif; ?>
                         <?php else: ?>
                             <div class="alert alert-warning rounded-3 mb-4">
                                 <i class="fa-solid fa-triangle-exclamation me-2"></i>
@@ -415,6 +440,49 @@ if ($resRel) {
                 window.location.href = 'checkout.php';
             } else {
                 btn.disabled = false;
+                Swal.fire({ icon: 'warning', title: 'Atención', text: data.message });
+            }
+        })
+        .catch(err => {
+            btn.disabled = false;
+            Swal.fire({ icon: 'error', title: 'Error', text: 'Error de conexión.' });
+        });
+    });
+
+    // Añadir al carrito como invitado
+    document.querySelector('.btn-guest-cart')?.addEventListener('click', function() {
+        const btn = this;
+        const id = this.dataset.id;
+        btn.disabled = true;
+
+        fetch('../../controllers/cliente_pedido_action.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'agregar_carrito', id_repuesto: id, cantidad: 1 })
+        })
+        .then(res => res.json())
+        .then(data => {
+            btn.disabled = false;
+            if (data.status === 'success') {
+                document.querySelectorAll('.cart-badge-count').forEach(el => {
+                    el.textContent = data.total_articulos;
+                    el.classList.remove('d-none');
+                });
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Guardado en carrito temporal!',
+                    text: 'El repuesto se guardó en tu sesión. Inicia sesión o crea tu cuenta para procesar tu orden.',
+                    showCancelButton: true,
+                    confirmButtonColor: '#004ba8',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: '<i class="fa-solid fa-arrow-right-to-bracket me-1"></i> Iniciar Sesión',
+                    cancelButtonText: 'Seguir consultando'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.href = '../../public/index.php?login=1';
+                    }
+                });
+            } else {
                 Swal.fire({ icon: 'warning', title: 'Atención', text: data.message });
             }
         })

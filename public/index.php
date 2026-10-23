@@ -761,7 +761,11 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
             </a>
             
             <div class="d-flex align-items-center gap-3">
-                <a href="#quienes-somos" class="fw-semibold text-dark me-2 text-decoration-none d-none d-md-inline" style="font-size: 1.05rem;">
+                <a href="../views/cliente/catalogo.php" class="btn btn-outline-primary fw-semibold px-3 py-2 d-inline-flex align-items-center gap-2 shadow-sm" style="border-radius: 12px; border-color: #004ba8; color: #004ba8; background: #fff;">
+                    <i class="fa-solid fa-store"></i> <span class="d-none d-sm-inline">Catálogo</span> Repuestos
+                </a>
+
+                <a href="#quienes-somos" class="fw-semibold text-dark me-2 text-decoration-none d-none d-lg-inline" style="font-size: 1.05rem;">
                     <i class="fa-solid fa-users me-1 text-primary"></i> Quiénes Somos
                 </a>
 
@@ -801,6 +805,14 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
                         <i class="fa-solid fa-arrow-right-from-bracket"></i>
                     </a>
                 <?php else: ?>
+                    <?php if ($cart_count_public > 0): ?>
+                        <a href="../views/cliente/carrito.php" class="btn btn-outline-primary position-relative d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; border-radius: 12px; border-color: #cbd5e1; background: #fff;" title="Ver mi carrito de invitado">
+                            <i class="fa-solid fa-cart-shopping fs-5"></i>
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                <?= $cart_count_public ?>
+                            </span>
+                        </a>
+                    <?php endif; ?>
                     <a href="#" class="btn btn-outline-primary fw-semibold px-3 py-2 d-none d-sm-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#registerModal" style="border-radius: 12px;">
                         <i class="fa-solid fa-user-plus"></i> Registrarse
                     </a>
@@ -848,6 +860,15 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
                     </div>
                 </form>
             </div>
+
+            <!-- Banner llamativo para explorar repuestos sin registrarse -->
+            <div class="text-center mt-3">
+                <a href="../views/cliente/catalogo.php" class="badge rounded-pill bg-white text-primary text-decoration-none px-3 py-2 shadow-sm border border-primary-subtle d-inline-flex align-items-center gap-2" style="font-size: 0.95rem; font-weight: 500;">
+                    <i class="fa-solid fa-compass text-warning"></i>
+                    <span>¿Buscas repuestos? <strong>Explora nuestro catálogo abierto y fichas técnicas</strong></span>
+                    <i class="fa-solid fa-arrow-right ms-1 text-primary"></i>
+                </a>
+            </div>
         </div>
     </section>
 
@@ -860,7 +881,10 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
                     <i class="fa-solid fa-box-open"></i>
                     <h4>Sin coincidencias</h4>
                     <p>No encontramos repuestos con los criterios actuales.</p>
-                    <a href="index.php" class="btn btn-outline-primary mt-2">Limpiar filtros y búsqueda</a>
+                    <div class="d-flex justify-content-center gap-2 mt-3">
+                        <a href="index.php" class="btn btn-outline-secondary">Limpiar filtros</a>
+                        <a href="../views/cliente/catalogo.php" class="btn btn-primary"><i class="fa-solid fa-store me-1"></i> Ir al Catálogo Completo</a>
+                    </div>
                 </div>
             <?php elseif (!empty($repuestos)): ?>
                 <?php foreach ($repuestos as $repuesto): ?>
@@ -893,9 +917,19 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
                         </div>
                     </a>
                 <?php endforeach; ?>
+                <div class="text-center mt-4">
+                    <a href="../views/cliente/catalogo.php" class="btn btn-outline-primary rounded-pill px-4 py-2 fw-semibold">
+                        <i class="fa-solid fa-layer-group me-1"></i> Ver catálogo completo con fotos y detalles
+                    </a>
+                </div>
             <?php else: ?>
                  <div class="no-results">
                     <p>Utiliza la barra de búsqueda o la cámara IA para encontrar repuestos.</p>
+                    <div class="mt-3">
+                        <a href="../views/cliente/catalogo.php" class="btn btn-primary rounded-pill px-4 py-2">
+                            <i class="fa-solid fa-store me-2"></i> Explorar Catálogo de Repuestos
+                        </a>
+                    </div>
                 </div>
             <?php endif; ?>
 

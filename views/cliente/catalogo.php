@@ -1,9 +1,6 @@
 <?php
 session_start();
-if (!isset($_SESSION['user_id']) || !isset($_SESSION['rol']) || $_SESSION['rol'] !== 'Cliente') {
-    header('Location: ../../public/index.php');
-    exit;
-}
+$is_cliente_auth = isset($_SESSION['user_id']) && isset($_SESSION['rol']) && $_SESSION['rol'] === 'Cliente';
 
 require_once '../../config/database.php';
 require_once '../../models/MarcaModel.php';
@@ -173,6 +170,29 @@ $stmt->close();
     <?php require_once 'sidebar.php'; ?>
 
     <main class="main-content">
+        <?php if (!$is_cliente_auth): ?>
+            <!-- Banner informativo para usuarios invitados / sin sesión -->
+            <div class="alert alert-info border-0 shadow-sm d-flex flex-column flex-md-row align-items-md-center justify-content-between p-3 rounded-4 mb-4 gap-3" style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 44px; height: 44px;">
+                        <i class="fa-solid fa-magnifying-glass fs-5"></i>
+                    </div>
+                    <div>
+                        <h6 class="fw-bold text-primary mb-1">Consulta libre de repuestos y fichas técnicas</h6>
+                        <p class="text-secondary small mb-0">Estás explorando el catálogo como invitado. Puedes consultar especificaciones, compatibilidades, fotos y disponibilidad. Para comprar o guardar en tu carrito permanente, inicia sesión o crea tu cuenta.</p>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                    <a href="../../public/index.php?register=1" class="btn btn-primary btn-sm fw-semibold rounded-pill px-3 py-2 shadow-sm" style="background: #004ba8; border: none;">
+                        <i class="fa-solid fa-user-plus me-1"></i> Registrarse
+                    </a>
+                    <a href="../../public/index.php?login=1" class="btn btn-outline-primary btn-sm fw-semibold rounded-pill px-3 py-2">
+                        <i class="fa-solid fa-arrow-right-to-bracket me-1"></i> Iniciar Sesión
+                    </a>
+                </div>
+            </div>
+        <?php endif; ?>
+
         <!-- Título y breadcrumb -->
         <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
             <div>
@@ -410,6 +430,22 @@ $stmt->close();
                         el.classList.remove('d-none');
                     });
 
+                    <?php if (!$is_cliente_auth): ?>
+                    Swal.fire({
+                        icon: 'success',
+                        title: '¡Añadido a tu carrito de invitado!',
+                        text: 'El repuesto se guardó en tu carrito temporal. Recuerda iniciar sesión o crear tu cuenta para finalizar tu compra y recibirlo a domicilio.',
+                        showCancelButton: true,
+                        confirmButtonColor: '#004ba8',
+                        cancelButtonColor: '#6c757d',
+                        confirmButtonText: '<i class="fa-solid fa-arrow-right-to-bracket me-1"></i> Iniciar Sesión para Comprar',
+                        cancelButtonText: 'Seguir mirando'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            window.location.href = '../../public/index.php?login=1';
+                        }
+                    });
+                    <?php else: ?>
                     Swal.fire({
                         toast: true,
                         position: 'top-end',
@@ -419,6 +455,7 @@ $stmt->close();
                         timer: 2500,
                         timerProgressBar: true
                     });
+                    <?php endif; ?>
                 } else {
                     Swal.fire({ icon: 'warning', title: 'Atención', text: data.message });
                 }
