@@ -337,20 +337,27 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
             pointer-events: none;
             z-index: 0;
         }
-        .gear-icon { position: absolute; color: rgba(255, 255, 255, 0.08); }
+        .gear-icon {
+            position: absolute;
+            color: rgba(255, 255, 255, 0.08);
+            transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+            will-change: transform;
+            pointer-events: none;
+        }
         .gear-1 { font-size: 140px; top: -30px; left: -20px; }
         .gear-2 { font-size: 90px; top: 120px; left: 60px; }
         .gear-3 { font-size: 170px; top: -40px; right: -50px; }
         .gear-4 { font-size: 80px; top: 150px; right: 50px; }
 
-        .dots-pattern {
+        .antigravity-dots-canvas {
             position: absolute;
-            width: 150px; height: 150px;
-            background-image: radial-gradient(rgba(255, 255, 255, 0.2) 2px, transparent 2px);
-            background-size: 20px 20px;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
         }
-        .dots-left { top: 30px; left: 40px; }
-        .dots-right { bottom: 80px; right: 40px; }
 
         .hero-content {
             position: relative;
@@ -972,8 +979,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
             <i class="fa-solid fa-gear gear-icon gear-2"></i>
             <i class="fa-solid fa-gear gear-icon gear-3"></i>
             <i class="fa-solid fa-gear gear-icon gear-4"></i>
-            <div class="dots-pattern dots-left"></div>
-            <div class="dots-pattern dots-right"></div>
+            <canvas id="antigravityCanvas" class="antigravity-dots-canvas"></canvas>
         </div>
 
         <div class="hero-content container">
@@ -2311,6 +2317,252 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
             });
         }
     });
+    </script>
+    
+    <!-- Antigravity Interactive Dots & Parallax Physics Engine -->
+    <script>
+    (function() {
+        const hero = document.querySelector('.hero-section');
+        const canvas = document.getElementById('antigravityCanvas');
+        if (!hero || !canvas) return;
+
+        const ctx = canvas.getContext('2d');
+        const gears = hero.querySelectorAll('.gear-icon');
+
+        let width = 0;
+        let height = 0;
+        let dpr = window.devicePixelRatio || 1;
+        let particles = [];
+        let animationFrameId = null;
+
+        const mouse = {
+            x: null,
+            y: null,
+            radius: 140, // Radio de influencia de repulsión
+            isActive: false
+        };
+
+        class Particle {
+            constructor(baseX, baseY, isGrid = true) {
+                this.baseX = baseX;
+                this.baseY = baseY;
+                this.x = baseX + (Math.random() - 0.5) * 4;
+                this.y = baseY + (Math.random() - 0.5) * 4;
+                this.vx = 0;
+                this.vy = 0;
+                this.isGrid = isGrid;
+                
+                // Variación de tamaño según tipo
+                this.baseRadius = isGrid ? (Math.random() * 0.8 + 2.2) : (Math.random() * 1.5 + 1.5);
+                this.radius = this.baseRadius;
+                
+                // Opacidad y coloración Google Antigravity
+                this.baseAlpha = isGrid ? 0.35 : (Math.random() * 0.35 + 0.15);
+                this.alpha = this.baseAlpha;
+                
+                // Inercia / masa
+                this.density = Math.random() * 0.8 + 0.6;
+                
+                // Movimiento orgánico flotante
+                this.floatAngle = Math.random() * Math.PI * 2;
+                this.floatSpeed = Math.random() * 0.02 + 0.008;
+                this.floatDist = isGrid ? (Math.random() * 2 + 1) : (Math.random() * 6 + 3);
+            }
+
+            update() {
+                // Si el ratón está cerca, efecto repulsión antigravedad
+                if (mouse.isActive && mouse.x !== null && mouse.y !== null) {
+                    const dx = mouse.x - this.x;
+                    const dy = mouse.y - this.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance < mouse.radius) {
+                        const forceDirectionX = dx / distance;
+                        const forceDirectionY = dy / distance;
+                        const force = (mouse.radius - distance) / mouse.radius; // 0 a 1
+                        
+                        // Empuje hacia afuera (repulsión estilo Anti-Gravity)
+                        const repelStrength = 16 * this.density;
+                        this.vx -= forceDirectionX * force * repelStrength;
+                        this.vy -= forceDirectionY * force * repelStrength;
+                        
+                        // Crece y se ilumina sutilmente al interactuar
+                        this.radius = this.baseRadius + force * 2.5;
+                        this.alpha = Math.min(0.9, this.baseAlpha + force * 0.55);
+                    } else {
+                        // Suavizar retorno de tamaño y brillo
+                        this.radius += (this.baseRadius - this.radius) * 0.08;
+                        this.alpha += (this.baseAlpha - this.alpha) * 0.05;
+                    }
+                } else {
+                    this.radius += (this.baseRadius - this.radius) * 0.08;
+                    this.alpha += (this.baseAlpha - this.alpha) * 0.05;
+                }
+
+                // Fuerza de resorte elástico para volver a su posición base
+                this.floatAngle += this.floatSpeed;
+                const targetX = this.baseX + Math.cos(this.floatAngle) * this.floatDist;
+                const targetY = this.baseY + Math.sin(this.floatAngle) * this.floatDist;
+
+                const homeDx = targetX - this.x;
+                const homeDy = targetY - this.y;
+
+                this.vx += homeDx * 0.045; // Constante del resorte
+                this.vy += homeDy * 0.045;
+
+                // Fricción / amortiguación suave
+                this.vx *= 0.85;
+                this.vy *= 0.85;
+
+                this.x += this.vx;
+                this.y += this.vy;
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, Math.max(0.5, this.radius), 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(255, 255, 255, ${this.alpha})`;
+                ctx.fill();
+            }
+        }
+
+        function initParticles() {
+            particles = [];
+            const rect = hero.getBoundingClientRect();
+            width = rect.width;
+            height = rect.height;
+
+            dpr = window.devicePixelRatio || 1;
+            canvas.width = width * dpr;
+            canvas.height = height * dpr;
+            ctx.resetTransform();
+            ctx.scale(dpr, dpr);
+
+            // 1. Grid izquierdo (como el mostrado en la imagen de referencia)
+            const leftCols = Math.min(8, Math.floor(width / 70));
+            const leftRows = 7;
+            const leftSpacingX = 22;
+            const leftSpacingY = 22;
+            const leftStartX = 40;
+            const leftStartY = 30;
+
+            for (let r = 0; r < leftRows; r++) {
+                for (let c = 0; c < leftCols; c++) {
+                    particles.push(new Particle(
+                        leftStartX + c * leftSpacingX,
+                        leftStartY + r * leftSpacingY,
+                        true
+                    ));
+                }
+            }
+
+            // 2. Grid derecho
+            const rightCols = Math.min(8, Math.floor(width / 70));
+            const rightRows = 7;
+            const rightSpacingX = 22;
+            const rightSpacingY = 22;
+            const rightStartX = Math.max(leftStartX + leftCols * leftSpacingX + 200, width - 210);
+            const rightStartY = 70;
+
+            if (width > 600) {
+                for (let r = 0; r < rightRows; r++) {
+                    for (let c = 0; c < rightCols; c++) {
+                        particles.push(new Particle(
+                            rightStartX + c * rightSpacingX,
+                            rightStartY + r * rightSpacingY,
+                            true
+                        ));
+                    }
+                }
+            }
+
+            // 3. Partículas flotantes ambientales dispersas estilo Google Anti-Gravity
+            const ambientCount = Math.floor(width / 28); // ~30 a 45 partículas
+            for (let i = 0; i < ambientCount; i++) {
+                particles.push(new Particle(
+                    Math.random() * width,
+                    Math.random() * height,
+                    false
+                ));
+            }
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, width, height);
+
+            // Dibujar y actualizar partículas
+            for (let i = 0; i < particles.length; i++) {
+                particles[i].update();
+                particles[i].draw();
+            }
+
+            animationFrameId = requestAnimationFrame(animate);
+        }
+
+        // Manejo de eventos de cursor
+        function onPointerMove(clientX, clientY) {
+            const rect = hero.getBoundingClientRect();
+            mouse.x = clientX - rect.left;
+            mouse.y = clientY - rect.top;
+            mouse.isActive = true;
+
+            // Parallax interactivo sutil de engranajes
+            const normX = (mouse.x / width) * 2 - 1; // -1 a 1
+            const normY = (mouse.y / height) * 2 - 1; // -1 a 1
+
+            gears.forEach((gear, idx) => {
+                const depth = (idx + 1) * 6;
+                const sign = idx % 2 === 0 ? -1 : 1;
+                const moveX = normX * depth * sign;
+                const moveY = normY * depth * 0.75 * sign;
+                gear.style.transform = `translate(${moveX}px, ${moveY}px)`;
+            });
+        }
+
+        hero.addEventListener('mousemove', function(e) {
+            onPointerMove(e.clientX, e.clientY);
+        });
+
+        hero.addEventListener('mouseleave', function() {
+            mouse.isActive = false;
+            mouse.x = null;
+            mouse.y = null;
+
+            // Restablecer engranajes con suavidad
+            gears.forEach(gear => {
+                gear.style.transform = 'translate(0px, 0px)';
+            });
+        });
+
+        // Soporte táctil para pantallas táctiles / móviles
+        hero.addEventListener('touchmove', function(e) {
+            if (e.touches && e.touches.length > 0) {
+                onPointerMove(e.touches[0].clientX, e.touches[0].clientY);
+            }
+        }, { passive: true });
+
+        hero.addEventListener('touchend', function() {
+            mouse.isActive = false;
+            mouse.x = null;
+            mouse.y = null;
+            gears.forEach(gear => {
+                gear.style.transform = 'translate(0px, 0px)';
+            });
+        });
+
+        // Redimensionamiento responsive
+        let resizeTimeout;
+        window.addEventListener('resize', function() {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                initParticles();
+            }, 150);
+        });
+
+        // Iniciar motor de partículas
+        initParticles();
+        animate();
+    })();
     </script>
 
 </body>
