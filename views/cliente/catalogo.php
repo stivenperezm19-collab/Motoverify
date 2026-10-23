@@ -162,7 +162,25 @@ if (isset($_SESSION['carrito']) && is_array($_SESSION['carrito'])) {
         }
         .info-box i { color: #2563eb; font-size: 1.25rem; margin-top: 2px; flex-shrink: 0; }
         .info-box h6 { font-weight: 700; margin-bottom: 2px; font-size: 0.95rem; color: #1e3a8a; }
-        .info-box p { font-size: 0.85rem; color: #64748b; margin-bottom: 0; }
+        /* Category Pagination */
+        .cat-page-num {
+            width: 32px; height: 32px;
+            display: inline-flex; align-items: center; justify-content: center;
+            border-radius: 8px; font-size: 0.82rem; font-weight: 700;
+            cursor: pointer; border: 1px solid #e2e8f0; background: #fff;
+            color: #4b5563; transition: all 0.15s;
+        }
+        .cat-page-num.active {
+            background: #004ba8; color: #fff; border-color: #004ba8;
+            box-shadow: 0 2px 6px rgba(0,75,168,0.25);
+        }
+        .cat-page-num:hover:not(.active) {
+            background: #f1f5f9; color: #004ba8;
+        }
+        @keyframes fadeInCat {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
 
         @media (max-width: 991px) {
             .sidebar { transform: translateX(-100%); transition: transform 0.3s; }
@@ -234,55 +252,88 @@ if (isset($_SESSION['carrito']) && is_array($_SESSION['carrito'])) {
                 <div class="col-12 col-xl-5 col-xxl-4">
                     <div class="d-flex align-items-center justify-content-between mb-3">
                         <h5 class="section-title mb-0">Categorías por ubicación</h5>
-                        <span class="badge bg-white text-muted border px-2 py-1 small"><?= count($categorias) ?> registradas</span>
+                        <span class="badge bg-white text-muted border px-2 py-1 small" id="catTotalBadge"><?= count($categorias) ?> registradas</span>
                     </div>
 
-                    <?php if (empty($categorias)): ?>
-                        <!-- Categorías iniciales por defecto cuando la BD está vacía -->
-                        <?php foreach ($defaultCats as $dc): ?>
-                        <div class="cat-item" onclick="searchCategory('<?= addslashes($dc['nombre']) ?>')">
-                            <div class="cat-icon-box" style="background-color: <?= $dc['color']; ?>;">
-                                <i class="<?= $dc['icono']; ?>"></i>
-                            </div>
-                            <div class="cat-item-info">
-                                <p class="cat-item-title"><?= $dc['nombre']; ?></p>
-                                <p class="cat-item-desc"><?= $dc['desc']; ?></p>
-                            </div>
-                            <i class="fa-solid fa-chevron-right text-muted opacity-50 ms-2"></i>
-                        </div>
-                        <?php endforeach; ?>
-                    <?php else: ?>
-                        <?php
-                        $palette = ['#1e40af','#059669','#d97706','#7c3aed','#dc2626','#0891b2','#be185d','#4338ca','#9333ea'];
-                        $idx = 0;
-                        foreach ($categorias as $cat):
-                            $bgColor = $palette[$idx % count($palette)];
-                            $idx++;
-                            $countRep = (int)($cat['total_repuestos'] ?? 0);
-                        ?>
-                        <a href="repuestos.php?categoria=<?= $cat['id_categoria']; ?>" class="cat-item" title="Ver repuestos de <?= htmlspecialchars($cat['nombre']) ?>">
-                            <div class="cat-icon-box" style="background-color: <?= $bgColor; ?>; overflow: hidden; padding: 6px;">
-                                <?php if(!empty($cat['imagen_url'])): ?>
-                                    <img src="../../<?= htmlspecialchars($cat['imagen_url']); ?>" alt="Icono" style="width: 100%; height: 100%; object-fit: contain;">
-                                <?php else: ?>
-                                    <i class="fa-solid fa-cube"></i>
-                                <?php endif; ?>
-                            </div>
-                            <div class="cat-item-info ms-2">
-                                <div class="d-flex align-items-center justify-content-between">
-                                    <p class="cat-item-title mb-0"><?= htmlspecialchars($cat['nombre']); ?></p>
-                                    <span class="badge rounded-pill bg-light text-secondary border small" style="font-size: 0.72rem;">
-                                        <?= $countRep ?> repuesto<?= $countRep !== 1 ? 's' : '' ?>
-                                    </span>
+                    <!-- Buscador rápido dentro de categorías -->
+                    <div class="input-group input-group-sm mb-3 shadow-sm rounded-3 overflow-hidden border">
+                        <span class="input-group-text bg-white border-0"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+                        <input type="text" id="catFilterInput" class="form-control border-0 py-2" placeholder="Filtrar categoría rápida..." onkeyup="filterCategories()">
+                        <button class="btn btn-white border-0 text-muted" type="button" onclick="document.getElementById('catFilterInput').value=''; filterCategories();" title="Limpiar"><i class="fa-solid fa-xmark"></i></button>
+                    </div>
+
+                    <div id="catItemsContainer">
+                        <?php if (empty($categorias)): ?>
+                            <!-- Categorías iniciales por defecto cuando la BD está vacía -->
+                            <?php foreach ($defaultCats as $dc): ?>
+                            <div class="cat-item" onclick="searchCategory('<?= addslashes($dc['nombre']) ?>')">
+                                <div class="cat-icon-box" style="background-color: <?= $dc['color']; ?>;">
+                                    <i class="<?= $dc['icono']; ?>"></i>
                                 </div>
-                                <p class="cat-item-desc mb-0 mt-1" title="<?= htmlspecialchars($cat['descripcion'] ?? ''); ?>">
-                                    <?= htmlspecialchars($cat['descripcion'] ?? 'Repuestos de alta calidad y rendimiento.'); ?>
-                                </p>
+                                <div class="cat-item-info">
+                                    <p class="cat-item-title"><?= $dc['nombre']; ?></p>
+                                    <p class="cat-item-desc"><?= $dc['desc']; ?></p>
+                                </div>
+                                <i class="fa-solid fa-chevron-right text-muted opacity-50 ms-2"></i>
                             </div>
-                            <i class="fa-solid fa-arrow-right text-primary opacity-75 ms-2"></i>
-                        </a>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <?php
+                            $palette = ['#1e40af','#059669','#d97706','#7c3aed','#dc2626','#0891b2','#be185d','#4338ca','#9333ea'];
+                            $idx = 0;
+                            foreach ($categorias as $cat):
+                                $bgColor = $palette[$idx % count($palette)];
+                                $idx++;
+                                $countRep = (int)($cat['total_repuestos'] ?? 0);
+                            ?>
+                            <a href="repuestos.php?categoria=<?= $cat['id_categoria']; ?>" class="cat-item" title="Ver repuestos de <?= htmlspecialchars($cat['nombre']) ?>">
+                                <div class="cat-icon-box" style="background-color: <?= $bgColor; ?>; overflow: hidden; padding: 6px;">
+                                    <?php if(!empty($cat['imagen_url'])): ?>
+                                        <img src="../../<?= htmlspecialchars($cat['imagen_url']); ?>" alt="Icono" style="width: 100%; height: 100%; object-fit: contain;">
+                                    <?php else: ?>
+                                        <i class="fa-solid fa-cube"></i>
+                                    <?php endif; ?>
+                                </div>
+                                <div class="cat-item-info ms-2">
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <p class="cat-item-title mb-0"><?= htmlspecialchars($cat['nombre']); ?></p>
+                                        <span class="badge rounded-pill bg-light text-secondary border small" style="font-size: 0.72rem;">
+                                            <?= $countRep ?> repuesto<?= $countRep !== 1 ? 's' : '' ?>
+                                        </span>
+                                    </div>
+                                    <p class="cat-item-desc mb-0 mt-1" title="<?= htmlspecialchars($cat['descripcion'] ?? ''); ?>">
+                                        <?= htmlspecialchars($cat['descripcion'] ?? 'Repuestos de alta calidad y rendimiento.'); ?>
+                                    </p>
+                                </div>
+                                <i class="fa-solid fa-arrow-right text-primary opacity-75 ms-2"></i>
+                            </a>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </div>
+
+                    <!-- Mensaje si no hay coincidencias con el buscador rápido -->
+                    <div id="catNoMatch" class="text-center py-4 bg-white rounded-3 border d-none">
+                        <i class="fa-solid fa-box-open text-muted fs-3 mb-2"></i>
+                        <p class="text-muted small mb-0">No se encontraron categorías con ese criterio.</p>
+                    </div>
+
+                    <!-- Paginación de Categorías -->
+                    <div class="cat-pagination-wrapper mt-3">
+                        <div class="d-flex align-items-center justify-content-between p-2 bg-white rounded-3 border shadow-sm">
+                            <button class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-semibold" id="catPrevBtn" onclick="changeCatPage(-1)" disabled style="font-size: 0.8rem;">
+                                <i class="fa-solid fa-chevron-left me-1"></i> Anterior
+                            </button>
+                            <div id="catPageNumbers" class="d-flex align-items-center gap-1">
+                                <!-- Botones generados por JS -->
+                            </div>
+                            <button class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-semibold" id="catNextBtn" onclick="changeCatPage(1)" style="font-size: 0.8rem;">
+                                Siguiente <i class="fa-solid fa-chevron-right ms-1"></i>
+                            </button>
+                        </div>
+                        <div class="text-center mt-2">
+                            <small class="text-muted fw-semibold" id="catPageInfo" style="font-size: 0.78rem;">Página 1 de 2</small>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Right Column: Motorcycle Diagram -->
@@ -369,6 +420,95 @@ if (isset($_SESSION['carrito']) && is_array($_SESSION['carrito'])) {
                 window.location.href = 'repuestos.php?search=' + encodeURIComponent(name);
             }
         }
+
+        /* ===== PAGINACIÓN Y FILTRADO INTERACTIVO DE CATEGORÍAS ===== */
+        const CATS_PER_PAGE = 5;
+        let currentCatPage = 1;
+        let filteredCatItems = [];
+
+        function initCatPagination() {
+            const allItems = Array.from(document.querySelectorAll('#catItemsContainer .cat-item'));
+            filteredCatItems = allItems;
+            renderCatPage();
+        }
+
+        function filterCategories() {
+            const term = (document.getElementById('catFilterInput')?.value || '').toLowerCase().trim();
+            const allItems = Array.from(document.querySelectorAll('#catItemsContainer .cat-item'));
+            const noMatch = document.getElementById('catNoMatch');
+            const pagWrapper = document.querySelector('.cat-pagination-wrapper');
+            
+            if (!term) {
+                filteredCatItems = allItems;
+            } else {
+                filteredCatItems = allItems.filter(item => {
+                    const title = item.querySelector('.cat-item-title')?.textContent.toLowerCase() || '';
+                    const desc = item.querySelector('.cat-item-desc')?.textContent.toLowerCase() || '';
+                    return title.includes(term) || desc.includes(term);
+                });
+            }
+
+            if (noMatch) {
+                if (filteredCatItems.length === 0) {
+                    noMatch.classList.remove('d-none');
+                    if (pagWrapper) pagWrapper.style.display = 'none';
+                } else {
+                    noMatch.classList.add('d-none');
+                    if (pagWrapper) pagWrapper.style.display = 'block';
+                }
+            }
+
+            currentCatPage = 1;
+            renderCatPage();
+        }
+
+        function renderCatPage() {
+            const allItems = Array.from(document.querySelectorAll('#catItemsContainer .cat-item'));
+            allItems.forEach(el => el.style.display = 'none');
+            
+            const totalItems = filteredCatItems.length;
+            const totalPages = Math.max(1, Math.ceil(totalItems / CATS_PER_PAGE));
+            if (currentCatPage > totalPages) currentCatPage = totalPages;
+            if (currentCatPage < 1) currentCatPage = 1;
+            
+            const startIdx = (currentCatPage - 1) * CATS_PER_PAGE;
+            const endIdx = startIdx + CATS_PER_PAGE;
+            
+            filteredCatItems.slice(startIdx, endIdx).forEach(el => {
+                el.style.display = 'flex';
+                el.style.animation = 'fadeInCat 0.25s ease forwards';
+            });
+            
+            const prevBtn = document.getElementById('catPrevBtn');
+            const nextBtn = document.getElementById('catNextBtn');
+            if (prevBtn) prevBtn.disabled = (currentCatPage <= 1);
+            if (nextBtn) nextBtn.disabled = (currentCatPage >= totalPages);
+            
+            const pageInfo = document.getElementById('catPageInfo');
+            if (pageInfo) {
+                pageInfo.textContent = `Mostrando página ${currentCatPage} de ${totalPages} (${totalItems} categoría${totalItems !== 1 ? 's' : ''})`;
+            }
+            
+            const pageNumbers = document.getElementById('catPageNumbers');
+            if (pageNumbers) {
+                pageNumbers.innerHTML = '';
+                for (let i = 1; i <= totalPages; i++) {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.className = `cat-page-num ${i === currentCatPage ? 'active' : ''}`;
+                    btn.textContent = i;
+                    btn.onclick = () => { currentCatPage = i; renderCatPage(); };
+                    pageNumbers.appendChild(btn);
+                }
+            }
+        }
+
+        function changeCatPage(dir) {
+            currentCatPage += dir;
+            renderCatPage();
+        }
+
+        document.addEventListener('DOMContentLoaded', initCatPagination);
     </script>
 </body>
 </html>
