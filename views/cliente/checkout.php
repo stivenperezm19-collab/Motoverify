@@ -317,9 +317,11 @@ $total = $subtotal + $impuestos;
                     title: '¡Pedido Registrado!',
                     text: resData.message,
                     confirmButtonColor: '#004ba8',
-                    confirmButtonText: 'Ver Detalle del Pedido'
+                    confirmButtonText: 'Ver Detalle del Pedido',
+                    allowOutsideClick: false
                 }).then(() => {
-                    window.location.href = resData.redirect;
+                    const targetUrl = resData.id_venta ? ('detalle_compra.php?id=' + resData.id_venta) : (resData.redirect || 'historial_compras.php');
+                    window.location.href = targetUrl;
                 });
             } else {
                 btn.disabled = false;

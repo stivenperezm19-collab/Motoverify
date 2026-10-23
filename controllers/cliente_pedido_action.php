@@ -349,7 +349,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'status' => 'success',
                 'message' => '¡Tu pedido ha sido confirmado y registrado con éxito!',
                 'id_venta' => $id_venta,
-                'redirect' => '../views/cliente/detalle_compra.php?id=' . $id_venta
+                'redirect' => 'detalle_compra.php?id=' . $id_venta
             ]);
             exit;
         } else {
