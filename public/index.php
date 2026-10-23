@@ -206,54 +206,117 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
             overflow-y: scroll; /* Force scrollbar to prevent layout shift */
         }
 
-        /* --- Navbar --- */
+        /* --- Navbar Profesional --- */
         .navbar {
-            padding: 1.2rem 0;
-            background-color: white;
+            padding: 0.85rem 0;
+            background-color: #ffffff;
+            border-bottom: 1px solid #eef2f6 !important;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.02);
+            position: sticky;
+            top: 0;
+            z-index: 1040;
         }
         .navbar-brand {
             display: flex;
             align-items: center;
-            gap: 5px;
             text-decoration: none;
+            padding: 0;
         }
-        
-        .logo-icon-container {
-            position: relative;
-            width: 45px;
-            height: 40px;
-            margin-right: 5px;
+        .navbar-brand img {
+            height: 72px;
+            width: auto;
+            object-fit: contain;
+            transition: transform 0.2s ease;
         }
-        .logo-text {
-            font-size: 2.2rem;
-            font-weight: 800;
-            font-style: italic;
-            letter-spacing: -1.5px;
-            line-height: 1;
+        .navbar-brand:hover img {
+            transform: scale(1.02);
         }
-        .logo-text-moto { color: #1a1a1a; }
-        .logo-text-verify { color: #004ba8; }
 
-        .user-dropdown-btn {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            color: #001b4d;
-            font-weight: 600;
+        .nav-link-custom {
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: #334155;
             text-decoration: none;
-            font-size: 1.05rem;
+            padding: 8px 14px;
+            border-radius: 8px;
+            transition: all 0.2s ease;
         }
-        .user-avatar {
-            width: 42px;
-            height: 42px;
-            border-radius: 50%;
-            border: 1.5px solid #004ba8;
-            display: flex;
+        .nav-link-custom:hover {
+            color: #004ba8;
+            background-color: #f8fafc;
+        }
+
+        .btn-header-login {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #0f172a;
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            background: transparent;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+        }
+        .btn-header-login:hover {
+            color: #004ba8;
+            background-color: #f1f5f9;
+        }
+
+        .btn-header-register {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: #ffffff !important;
+            background-color: #004ba8;
+            border: 1px solid #004ba8;
+            padding: 8px 20px;
+            border-radius: 10px;
+            text-decoration: none;
+            box-shadow: 0 2px 6px rgba(0, 75, 168, 0.2);
+            transition: all 0.2s ease;
+            display: inline-flex;
             align-items: center;
             justify-content: center;
+        }
+        .btn-header-register:hover {
+            background-color: #003a82;
+            border-color: #003a82;
+            box-shadow: 0 4px 12px rgba(0, 75, 168, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .btn-header-cart {
+            font-size: 0.9rem;
+            font-weight: 600;
             color: #004ba8;
-            background-color: white;
-            font-size: 1.2rem;
+            background-color: #eff6ff;
+            border: 1px solid #dbeafe;
+            padding: 7px 14px;
+            border-radius: 10px;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn-header-cart:hover {
+            background-color: #dbeafe;
+            color: #003a82;
+        }
+
+        @media (max-width: 576px) {
+            .navbar-brand img {
+                height: 52px;
+            }
+            .btn-header-login, .btn-header-register {
+                padding: 6px 12px;
+                font-size: 0.85rem;
+            }
+            .nav-link-custom {
+                padding: 6px 10px;
+                font-size: 0.88rem;
+            }
         }
 
         /* --- Hero Section --- */
@@ -757,16 +820,20 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
     <nav class="navbar border-bottom">
         <div class="container-fluid px-4 px-lg-5">
             <a class="navbar-brand" href="index.php">
-                <img src="assets/images/logo_motoverify.png?v=<?php echo time(); ?>" alt="Motoverify" style="height: 95px; width: auto; object-fit: contain;">
+                <img src="assets/images/logo_motoverify.png?v=<?php echo time(); ?>" alt="Motoverify">
             </a>
             
-            <div class="d-flex align-items-center gap-3">
-                <a href="../views/cliente/catalogo.php" class="btn btn-outline-primary fw-semibold px-3 py-2 d-inline-flex align-items-center gap-2 shadow-sm" style="border-radius: 12px; border-color: #004ba8; color: #004ba8; background: #fff;">
-                    <i class="fa-solid fa-store"></i> <span class="d-none d-sm-inline">Catálogo</span> Repuestos
+            <div class="d-flex align-items-center gap-2 gap-md-3">
+                <a href="../views/cliente/catalogo.php" class="nav-link-custom">
+                    Catálogo
                 </a>
 
-                <a href="#quienes-somos" class="fw-semibold text-dark me-2 text-decoration-none d-none d-lg-inline" style="font-size: 1.05rem;">
-                    <i class="fa-solid fa-users me-1 text-primary"></i> Quiénes Somos
+                <a href="../views/cliente/repuestos.php" class="nav-link-custom d-none d-sm-inline">
+                    Repuestos
+                </a>
+
+                <a href="#quienes-somos" class="nav-link-custom d-none d-lg-inline">
+                    Quiénes Somos
                 </a>
 
                 <?php 
@@ -778,49 +845,37 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
                 }
                 ?>
 
+                <?php if ($cart_count_public > 0): ?>
+                    <a href="../views/cliente/carrito.php" class="btn-header-cart" title="Ver mi carrito de compras">
+                        Carrito <span class="badge rounded-pill bg-primary"><?= $cart_count_public ?></span>
+                    </a>
+                <?php endif; ?>
+
+                <div class="vr my-auto mx-1 text-secondary opacity-25 d-none d-sm-block" style="height: 22px;"></div>
+
                 <?php if (isset($_SESSION['user_id']) && isset($_SESSION['rol'])): ?>
                     <?php if ($_SESSION['rol'] === 'Cliente'): ?>
-                        <a href="../views/cliente/carrito.php" class="btn btn-outline-primary position-relative d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; border-radius: 12px; border-color: #cbd5e1; background: #fff;" title="Ver mi carrito">
-                            <i class="fa-solid fa-cart-shopping fs-5"></i>
-                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger <?= $cart_count_public > 0 ? '' : 'd-none' ?>">
-                                <?= $cart_count_public ?>
-                            </span>
-                        </a>
-                        <a href="../views/cliente/dashboard.php" class="btn btn-primary d-flex align-items-center gap-2 fw-semibold px-3 py-2 shadow-sm" style="border-radius: 12px; background: #004ba8; border: none;">
-                            <i class="fa-solid fa-house"></i>
-                            <span class="d-none d-sm-inline">Mi Panel (<?= htmlspecialchars($_SESSION['nombre'] ?? 'Cliente') ?>)</span>
+                        <a href="../views/cliente/dashboard.php" class="btn-header-register">
+                            Mi Panel (<?= htmlspecialchars($_SESSION['nombre'] ?? 'Cliente') ?>)
                         </a>
                     <?php elseif ($_SESSION['rol'] === 'Administrador'): ?>
-                        <a href="../views/admin/dashboard.php" class="btn btn-primary d-flex align-items-center gap-2 fw-semibold px-3 py-2 shadow-sm" style="border-radius: 12px; background: #004ba8; border: none;">
-                            <i class="fa-solid fa-gauge-high"></i>
-                            <span class="d-none d-sm-inline">Panel Admin</span>
+                        <a href="../views/admin/dashboard.php" class="btn-header-register">
+                            Panel Admin
                         </a>
                     <?php elseif ($_SESSION['rol'] === 'Vendedor'): ?>
-                        <a href="../views/vendedor/dashboard.php" class="btn btn-primary d-flex align-items-center gap-2 fw-semibold px-3 py-2 shadow-sm" style="border-radius: 12px; background: #004ba8; border: none;">
-                            <i class="fa-solid fa-shop"></i>
-                            <span class="d-none d-sm-inline">Panel Vendedor</span>
+                        <a href="../views/vendedor/dashboard.php" class="btn-header-register">
+                            Panel Vendedor
                         </a>
                     <?php endif; ?>
-                    <a href="../controllers/logout.php" class="btn btn-outline-danger d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; border-radius: 12px;" title="Cerrar Sesión">
-                        <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                    <a href="../controllers/logout.php" class="btn-header-login text-danger" title="Cerrar Sesión">
+                        Salir
                     </a>
                 <?php else: ?>
-                    <?php if ($cart_count_public > 0): ?>
-                        <a href="../views/cliente/carrito.php" class="btn btn-outline-primary position-relative d-flex align-items-center justify-content-center" style="width: 44px; height: 44px; border-radius: 12px; border-color: #cbd5e1; background: #fff;" title="Ver mi carrito de invitado">
-                            <i class="fa-solid fa-cart-shopping fs-5"></i>
-                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                                <?= $cart_count_public ?>
-                            </span>
-                        </a>
-                    <?php endif; ?>
-                    <a href="#" class="btn btn-outline-primary fw-semibold px-3 py-2 d-none d-sm-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#registerModal" style="border-radius: 12px;">
-                        <i class="fa-solid fa-user-plus"></i> Registrarse
+                    <a href="#" class="btn-header-login" data-bs-toggle="modal" data-bs-target="#loginModal">
+                        Iniciar Sesión
                     </a>
-                    <a href="#" class="user-dropdown-btn" data-bs-toggle="modal" data-bs-target="#loginModal" style="text-decoration: none;">
-                        <div class="user-avatar" style="background-color: #004ba8; color: white;">
-                            <i class="fa-solid fa-user"></i>
-                        </div>
-                        <span class="d-none d-sm-inline fw-semibold">Iniciar Sesión</span>
+                    <a href="#" class="btn-header-register" data-bs-toggle="modal" data-bs-target="#registerModal">
+                        Registrarse
                     </a>
                 <?php endif; ?>
             </div>
