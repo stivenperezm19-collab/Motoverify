@@ -913,7 +913,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
         .about-eyebrow {
             font-size: 0.92rem;
             font-weight: 700;
-            color: #059669;
+            color: #004ba8;
             letter-spacing: 0.5px;
             margin-bottom: 12px;
             text-transform: capitalize;
@@ -922,7 +922,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
             font-size: 2.5rem;
             font-weight: 800;
             line-height: 1.2;
-            color: #0f172a;
+            color: #0b1c3c;
             letter-spacing: -0.7px;
             margin-bottom: 24px;
         }
@@ -931,19 +931,19 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
             align-items: center;
             justify-content: center;
             gap: 8px;
-            background-color: #065f46;
+            background-color: #004ba8;
             color: #ffffff !important;
             font-weight: 600;
             font-size: 0.96rem;
             padding: 13px 32px;
             border-radius: 50px;
             text-decoration: none;
-            box-shadow: 0 4px 15px rgba(6, 95, 70, 0.22);
+            box-shadow: 0 4px 15px rgba(0, 75, 168, 0.25);
             transition: all 0.25s ease;
         }
         .btn-about-cta:hover {
-            background-color: #044e39;
-            box-shadow: 0 6px 20px rgba(6, 95, 70, 0.32);
+            background-color: #003a82;
+            box-shadow: 0 6px 20px rgba(0, 75, 168, 0.35);
             transform: translateY(-2px);
             color: #ffffff !important;
         }
@@ -993,7 +993,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
             left: 0;
             width: 100%;
             height: 100%;
-            background: linear-gradient(180deg, rgba(15, 23, 42, 0) 25%, rgba(15, 23, 42, 0.55) 60%, rgba(15, 23, 42, 0.95) 100%);
+            background: linear-gradient(180deg, rgba(11, 28, 60, 0) 25%, rgba(11, 28, 60, 0.55) 60%, rgba(11, 28, 60, 0.95) 100%);
             z-index: 1;
         }
         .story-content {
@@ -1024,38 +1024,38 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
             height: 100%;
         }
         .about-mission-card {
-            background-color: #d1fae5;
+            background-color: #f0f7ff;
+            border: 1px solid #dbeafe;
             border-radius: 26px;
-            border: none;
             padding: 38px 40px;
             flex: 1;
             display: flex;
             flex-direction: column;
             justify-content: center;
-            box-shadow: 0 4px 18px rgba(16, 185, 129, 0.08);
+            box-shadow: 0 4px 18px rgba(0, 75, 168, 0.05);
             transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
         .about-mission-card:hover {
             transform: translateY(-4px);
-            box-shadow: 0 12px 30px rgba(16, 185, 129, 0.15);
+            box-shadow: 0 12px 30px rgba(0, 75, 168, 0.12);
         }
         .mission-title {
             font-size: 1.7rem;
             font-weight: 700;
-            color: #064e3b;
+            color: #0b2253;
             margin-bottom: 14px;
             letter-spacing: -0.3px;
         }
         .mission-text {
             font-size: 1.02rem;
             line-height: 1.7;
-            color: #065f46;
+            color: #334155;
             margin: 0;
             font-weight: 450;
         }
 
         .about-vision-card {
-            background-color: #065f46;
+            background: linear-gradient(135deg, #004ba8 0%, #062b80 100%);
             border-radius: 26px;
             border: none;
             padding: 38px 40px;
@@ -1063,12 +1063,12 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
             display: flex;
             flex-direction: column;
             justify-content: center;
-            box-shadow: 0 8px 25px rgba(6, 95, 70, 0.2);
+            box-shadow: 0 8px 25px rgba(0, 75, 168, 0.25);
             transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
         .about-vision-card:hover {
             transform: translateY(-4px);
-            box-shadow: 0 14px 34px rgba(6, 95, 70, 0.3);
+            box-shadow: 0 14px 34px rgba(0, 75, 168, 0.35);
         }
         .vision-title {
             font-size: 1.7rem;
@@ -1080,7 +1080,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
         .vision-text {
             font-size: 1.02rem;
             line-height: 1.7;
-            color: rgba(255, 255, 255, 0.9);
+            color: rgba(255, 255, 255, 0.92);
             margin: 0;
             font-weight: 300;
         }
