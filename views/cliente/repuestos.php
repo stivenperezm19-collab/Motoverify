@@ -138,6 +138,11 @@ $stmt->close();
 
         .main-content { margin-left: 260px; margin-top: 110px; min-height: calc(100vh - 110px); padding: 30px; background-color: #f8f9fc; }
 
+        /* Hero Banner con barra de acento azul idéntica a catálogo */
+        .hero-banner { background: linear-gradient(135deg, #0640aa 0%, #1e5abf 100%); color: white; position: relative; overflow: hidden; }
+        .hero-banner::before { content: ''; position: absolute; left: 40px; top: 25%; height: 50%; width: 4px; background-color: #60a5fa; border-radius: 4px; }
+        .hero-gears { position: absolute; right: 30px; top: 50%; transform: translateY(-50%); pointer-events: none; }
+
         .filter-card { background: #ffffff; border-radius: 14px; padding: 22px; border: 1px solid #f0f1f3; box-shadow: 0 2px 8px rgba(0,0,0,0.02); margin-bottom: 25px; }
 
         .part-card {
@@ -193,34 +198,30 @@ $stmt->close();
             </div>
         <?php endif; ?>
 
-        <!-- Acceso directo al Catálogo Visual de Categorías en Moto -->
-        <div class="mb-4 d-flex flex-wrap align-items-center justify-content-between p-3 bg-white rounded-4 border shadow-sm gap-3">
-            <div class="d-flex align-items-center gap-3">
-                <div class="bg-primary-subtle text-primary rounded-3 d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
-                    <i class="fa-solid fa-motorcycle fs-4"></i>
-                </div>
-                <div>
-                    <span class="fw-bold text-dark d-block" style="font-size: 1.05rem;">¿Deseas buscar repuestos según su ubicación en la moto?</span>
-                    <span class="text-muted small">Explora el catálogo interactivo clasificado por sistemas (motor, frenos, eléctrico, etc.).</span>
-                </div>
+        <!-- Hero Banner con barra de acento azul (estilo idéntico a Catálogo / segunda imagen) -->
+        <div class="hero-banner rounded-4 p-4 ps-5 mb-4 d-flex flex-wrap align-items-center justify-content-between shadow-sm gap-3">
+            <div class="position-relative" style="z-index: 2; padding-left: 15px;">
+                <h2 class="fw-bold mb-2 d-flex align-items-center gap-3">
+                    <i class="fa-solid fa-puzzle-piece" style="font-size: 1.4rem; opacity: .9;"></i>
+                    Repuestos Disponibles
+                </h2>
+                <p class="mb-0 opacity-75" style="font-size: 1rem;">Explora todos los repuestos originales con su tipo de categoría y disponibilidad.</p>
             </div>
-            <a href="catalogo.php" class="btn btn-primary rounded-pill px-4 py-2 fw-semibold shadow-sm d-flex align-items-center gap-2" style="background: #004ba8; border: none;">
-                <i class="fa-solid fa-book-open"></i> Ver Catálogo por Ubicación
-            </a>
-        </div>
-
-        <!-- Título y breadcrumb -->
-        <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-2">
-            <div>
-                <h2 class="fw-bold mb-1 text-dark">Repuestos Disponibles</h2>
-                <p class="text-muted mb-0">Explora todos los repuestos originales con su tipo de categoría y disponibilidad.</p>
+            <div class="d-flex align-items-center gap-2" style="z-index: 2;">
+                <a href="catalogo.php" class="btn btn-light fw-bold text-primary rounded-pill px-4 py-2 shadow-sm d-flex align-items-center gap-2">
+                    <i class="fa-solid fa-book-open"></i> Ver Catálogo por Ubicación
+                </a>
+                <a href="carrito.php" class="btn btn-outline-light fw-bold rounded-pill px-4 py-2 shadow-sm d-flex align-items-center gap-2 position-relative">
+                    <i class="fa-solid fa-cart-shopping"></i> Ver Mi Carrito 
+                    <span class="badge bg-danger rounded-pill cart-badge-count <?= $carrito_total_items > 0 ? '' : 'd-none' ?>">
+                        <?= $carrito_total_items ?>
+                    </span>
+                </a>
             </div>
-            <a href="carrito.php" class="btn btn-outline-primary fw-semibold rounded-pill px-4 d-flex align-items-center gap-2">
-                <i class="fa-solid fa-cart-shopping"></i> Ver Mi Carrito 
-                <span class="badge bg-primary rounded-pill cart-badge-count <?= $carrito_total_items > 0 ? '' : 'd-none' ?>">
-                    <?= $carrito_total_items ?>
-                </span>
-            </a>
+            <div class="hero-gears d-none d-lg-block">
+                <i class="fa-solid fa-gear" style="font-size: 110px; color: rgba(255,255,255,0.08); position: absolute; right: 0; top: -55px;"></i>
+                <i class="fa-solid fa-gear" style="font-size: 65px; color: rgba(255,255,255,0.06); position: absolute; right: 85px; top: -25px;"></i>
+            </div>
         </div>
 
         <!-- Filtros Interactivos -->

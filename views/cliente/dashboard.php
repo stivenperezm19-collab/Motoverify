@@ -137,7 +137,7 @@ if (isset($_SESSION['carrito']) && is_array($_SESSION['carrito'])) {
         }
 
         /* Section Titles */
-        .section-title { font-weight: 700; font-size: 1.15rem; color: #1f2937; margin-bottom: 18px; }
+        .section-title { font-weight: 700; font-size: 1.15rem; color: #1f2937; margin-bottom: 18px; padding-left: 10px; border-left: 4px solid #004ba8; border-radius: 2px; }
 
         /* Brands */
         .brands-card { background: #fff; border: 1px solid #f0f1f3; border-radius: 14px; padding: 18px 28px; margin-bottom: 30px; }

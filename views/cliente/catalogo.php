@@ -95,7 +95,7 @@ if (isset($_SESSION['carrito']) && is_array($_SESSION['carrito'])) {
         .hero-gears { position: absolute; right: 30px; top: 50%; transform: translateY(-50%); pointer-events: none; }
 
         /* Category List */
-        .section-title { font-weight: 700; font-size: 1.1rem; color: #1e3a8a; margin-bottom: 20px; }
+        .section-title { font-weight: 700; font-size: 1.1rem; color: #1e3a8a; margin-bottom: 20px; padding-left: 10px; border-left: 4px solid #004ba8; border-radius: 2px; }
 
         .cat-item {
             display: flex; align-items: center; gap: 14px; padding: 12px 14px;
