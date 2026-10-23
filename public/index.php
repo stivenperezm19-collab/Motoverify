@@ -363,80 +363,163 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
             margin-bottom: 35px;
         }
 
-        /* --- Search Box --- */
+        /* --- Search Card (Estilo Profesional y Sencillo) --- */
         .search-container {
-            max-width: 650px;
+            max-width: 680px;
             margin: 0 auto;
         }
-        .search-box-outer {
-            background-color: #091f43;
-            border-radius: 20px;
-            padding: 6px; 
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
-            position: relative;
+        .search-card {
+            background-color: #ffffff;
+            border-radius: 18px;
+            padding: 16px 20px 14px 22px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            transition: box-shadow 0.2s ease, transform 0.2s ease;
         }
-        .search-box-inner {
-            background-color: white;
-            border-radius: 14px;
-            padding: 15px 25px;
-            position: relative;
+        .search-card:focus-within {
+            box-shadow: 0 14px 35px rgba(0, 0, 0, 0.2);
+        }
+
+        .search-main-row {
             display: flex;
-            flex-direction: column;
-        }
-        
-        .search-input-area {
-            border-bottom: 1px solid #e0e0e0;
+            align-items: center;
+            gap: 12px;
             padding-bottom: 12px;
-            margin-bottom: 12px;
-            padding-right: 60px;
-            position: relative;
+            border-bottom: 1px solid #f1f5f9;
         }
-        .search-input-area input {
+        .search-icon-leading {
+            color: #64748b;
+            font-size: 1.15rem;
+            flex-shrink: 0;
+        }
+        .search-input-field {
+            flex: 1;
             border: none;
             outline: none;
-            width: 100%;
-            font-size: 1.15rem;
+            font-size: 1.02rem;
             font-weight: 500;
-            color: #212529;
+            color: #0f172a;
+            background: transparent;
         }
-        .search-input-area input::placeholder { color: #888; }
-        
-        .search-filters {
-            display: flex;
-            align-items: center;
-            min-height: 35px;
+        .search-input-field::placeholder {
+            color: #94a3b8;
+            font-weight: 400;
         }
-        .filter-text {
-            color: #004ba8;
-            font-weight: 800;
-            font-size: 1.1rem;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            cursor: pointer;
-        }
-        .filter-text i { color: #a0a0a0; font-size: 1.3rem; }
 
-        .camera-button {
-            position: absolute;
-            right: 15px;
-            bottom: 10px;
-            background-color: #091f43;
-            color: white;
+        .camera-button-modern {
+            background-color: #0a2558;
+            color: #ffffff;
             border: none;
-            width: 60px;
-            height: 40px;
+            width: 44px;
+            height: 38px;
             border-radius: 10px;
-            display: flex;
+            display: inline-flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.4rem;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+            font-size: 1.2rem;
             cursor: pointer;
-            transition: background-color 0.2s;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+            box-shadow: 0 2px 6px rgba(10, 37, 88, 0.25);
         }
-        .camera-button:hover {
-            background-color: #001b4d;
+        .camera-button-modern:hover {
+            background-color: #004ba8;
+            transform: scale(1.04);
+            color: #ffffff;
+        }
+
+        .search-footer-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-top: 10px;
+        }
+        .filter-btn-trigger {
+            color: #004ba8;
+            font-weight: 700;
+            font-size: 0.95rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            user-select: none;
+            transition: color 0.15s ease;
+        }
+        .filter-btn-trigger:hover {
+            color: #003a82;
+        }
+        .filter-btn-trigger .filter-icon {
+            font-size: 0.95rem;
+            color: #004ba8;
+        }
+        .filter-btn-trigger .chevron-icon {
+            font-size: 0.75rem;
+            color: #64748b;
+            transition: transform 0.2s ease;
+        }
+
+        .search-sublink {
+            color: #64748b;
+            font-size: 0.88rem;
+            font-weight: 500;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: color 0.15s ease;
+        }
+        .search-sublink:hover {
+            color: #004ba8;
+            text-decoration: underline;
+        }
+        .search-sublink i {
+            font-size: 0.75rem;
+        }
+
+        /* --- Pill Explorar Catálogo --- */
+        .explore-catalog-pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background-color: #ffffff;
+            color: #004ba8;
+            font-weight: 600;
+            font-size: 0.95rem;
+            padding: 10px 24px;
+            border-radius: 50px;
+            text-decoration: none;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.12);
+            transition: all 0.2s ease;
+            border: 1px solid rgba(255, 255, 255, 0.8);
+        }
+        .explore-catalog-pill:hover {
+            color: #003a82;
+            background-color: #f8fafc;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.16);
+        }
+        .explore-catalog-pill i {
+            font-size: 1rem;
+        }
+
+        @media (max-width: 576px) {
+            .search-card {
+                padding: 12px 14px 10px 14px;
+                border-radius: 14px;
+            }
+            .search-input-field {
+                font-size: 0.9rem;
+            }
+            .camera-button-modern {
+                width: 38px;
+                height: 36px;
+                font-size: 1rem;
+            }
+            .explore-catalog-pill {
+                font-size: 0.85rem;
+                padding: 8px 16px;
+            }
         }
 
         /* --- Results List --- */
@@ -898,30 +981,35 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
             
             <div class="search-container">
                 <form id="searchForm" method="GET" action="index.php">
-                    <div class="search-box-outer">
-                        <div class="search-box-inner">
-                            <div class="search-input-area">
-                                <input type="text" name="search" placeholder="Pulsar135/180/NS200" value="<?= htmlspecialchars($search) ?>">
-                            </div>
-                            <div class="search-filters">
-                                <span class="filter-text" data-bs-toggle="modal" data-bs-target="#filtrosModal">
-                                    Filtros <?= (!empty($marca_id) || !empty($categoria_id) || !empty($modelo)) ? '<span class="badge bg-primary ms-2">Activos</span>' : '' ?> <i class="fa-solid fa-caret-down"></i>
-                                </span>
-                            </div>
-                            <button type="button" class="camera-button" title="Búsqueda por foto IA" data-bs-toggle="modal" data-bs-target="#iaModal">
+                    <div class="search-card">
+                        <div class="search-main-row">
+                            <i class="fa-solid fa-magnifying-glass search-icon-leading"></i>
+                            <input type="text" name="search" class="search-input-field" placeholder="Nombre, referencia o código del repuesto..." value="<?= htmlspecialchars($search) ?>" autocomplete="off">
+                            <button type="button" class="camera-button-modern" title="Búsqueda por foto IA" data-bs-toggle="modal" data-bs-target="#iaModal">
                                 <i class="fa-solid fa-camera"></i>
                             </button>
+                        </div>
+                        <div class="search-footer-row">
+                            <span class="filter-btn-trigger" data-bs-toggle="modal" data-bs-target="#filtrosModal">
+                                <i class="fa-solid fa-sliders filter-icon"></i>
+                                Filtros <?= (!empty($marca_id) || !empty($categoria_id) || !empty($modelo)) ? '<span class="badge bg-primary ms-1 py-1 px-2" style="font-size: 0.7rem;">Activos</span>' : '' ?>
+                                <i class="fa-solid fa-chevron-down chevron-icon"></i>
+                            </span>
+
+                            <a href="../views/cliente/repuestos.php" class="search-sublink">
+                                Búsqueda de repuestos <i class="fa-solid fa-chevron-right"></i>
+                            </a>
                         </div>
                     </div>
                 </form>
             </div>
 
-            <!-- Banner llamativo para explorar repuestos sin registrarse -->
+            <!-- Botón explorador de catálogo limpio tipo píldora -->
             <div class="text-center mt-3">
-                <a href="../views/cliente/catalogo.php" class="badge rounded-pill bg-white text-primary text-decoration-none px-3 py-2 shadow-sm border border-primary-subtle d-inline-flex align-items-center gap-2" style="font-size: 0.95rem; font-weight: 500;">
-                    <i class="fa-solid fa-compass text-warning"></i>
-                    <span>¿Buscas repuestos? <strong>Explora nuestro catálogo abierto y fichas técnicas</strong></span>
-                    <i class="fa-solid fa-arrow-right ms-1 text-primary"></i>
+                <a href="../views/cliente/catalogo.php" class="explore-catalog-pill">
+                    <i class="fa-regular fa-compass"></i>
+                    <span>Explorar catálogo y fichas técnicas</span>
+                    <i class="fa-solid fa-arrow-right"></i>
                 </a>
             </div>
         </div>
