@@ -1,16 +1,28 @@
 <?php
+// Iniciamos la sesión para recordar al administrador
 session_start();
+if (!isset($_SESSION['user_id']) || $_SESSION['rol'] !== 'Administrador') {
+    header('Location: ../../index.php');
+    exit;
+}
+// Conectamos a la base de datos
 require_once '../../config/database.php';
+require_once '../../models/MarcaModel.php';
+require_once '../../models/CategoriaModel.php';
+require_once '../../models/RepuestoModel.php';
 
-$marcas = [];
-try {
-    $result = $conn->query("SELECT * FROM marcas ORDER BY nombre ASC");
-    if ($result) {
-        while ($row = $result->fetch_assoc()) {
-            $marcas[] = $row;
-        }
-    }
-} catch (Exception $e) {}
+$marcaModel = new MarcaModel($conn);
+$catModel = new CategoriaModel($conn);
+$repModel = new RepuestoModel($conn);
+
+
+// Creamos una lista vacía para guardar las marcas
+$marcas = $marcaModel->getAllWithImages();
+
+// --- DATOS PARA FILTROS DE BÚSQUEDA ---
+$marcas_filter = $marcaModel->getAll();
+$cat_filter = $catModel->getAll();
+$mod_filter = $repModel->getModelos();
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -29,7 +41,7 @@ try {
         /* Topbar Global */
         .topbar-global { height: 110px; background: #ffffff; border-bottom: 1px solid #eaeaea; position: fixed; top: 0; left: 0; right: 0; z-index: 1050; }
         .topbar-logo { display: inline-flex; align-items: center; height: 100%; text-decoration: none; }
-        .topbar-logo img { max-height: 85px; width: auto; object-fit: contain; object-position: left center; margin-left: 5px; padding-right: 15px; }
+        .topbar-logo img { max-height: 90px; width: auto; object-fit: contain; object-position: left center; margin-left: 5px; padding-right: 15px; }
         .search-container { background: #ffffff; border: 1px solid #e0e0e0; border-radius: 12px; padding: 5px 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.02); }
         .search-container input { border: none; outline: none; box-shadow: none; }
 
@@ -46,8 +58,8 @@ try {
         .main-content { margin-left: 260px; margin-top: 110px; min-height: calc(100vh - 110px); display: flex; flex-direction: column; background-color: #fbfbfd; }
         
         /* Hero Banner */
-        .hero-banner { background-color: #0640aa; color: white; position: relative; overflow: hidden; }
-        .hero-banner::before { content: ''; position: absolute; left: 0; top: 20%; height: 60%; width: 4px; background-color: #3b82f6; border-radius: 0 4px 4px 0; }
+        
+        
         .hero-gears { position: absolute; right: 5%; top: 50%; transform: translateY(-50%); color: rgba(255,255,255,0.1); }
         .hero-gears i { position: absolute; }
         
@@ -62,6 +74,10 @@ try {
         .btn-edit:hover { background: #eff6ff; }
         .btn-delete { border-color: #fecaca; background: white; color: #dc2626; }
         .btn-delete:hover { background: #fef2f2; }
+            /* Hero Banner */
+        .hero-banner { background: linear-gradient(135deg, #0640aa 0%, #1e5abf 100%); color: white; position: relative; overflow: hidden; }
+        .hero-banner::before { content: ''; position: absolute; left: 40px; top: 25%; height: 50%; width: 4px; background-color: #60a5fa; border-radius: 4px; }
+        .hero-gears { position: absolute; right: 30px; top: 50%; transform: translateY(-50%); pointer-events: none; }
     </style>
 </head>
 <body>
@@ -69,17 +85,17 @@ try {
     <!-- Topbar Global -->
     <header class="topbar-global px-4 d-flex align-items-center justify-content-between">
         <a href="dashboard.php" class="topbar-logo text-decoration-none">
-            <img src="assets/logo_motoverify.png?v=<?php echo time(); ?>" alt="Motoverify">
+            <img src="../../public/assets/images/logo_motoverify.png?v=<?php echo time(); ?>" alt="Motoverify">
         </a>
         <div class="d-flex align-items-center gap-3">
-            <div class="search-container d-flex align-items-center" style="width: 400px;">
-                <input type="text" class="form-control" placeholder="Pulsar135/180/NS200" value="Pulsar135/180/NS200">
+            <form action="repuestos.php" method="GET" class="search-container d-flex align-items-center" style="width: 400px; margin-bottom: 0;">
+                <input type="text" name="search" class="form-control" placeholder="Pulsar135/180/NS200" value="<?= htmlspecialchars($_GET['search'] ?? '') ?>" style="background:transparent;">
                 <div class="vr mx-2"></div>
-                <span class="text-primary fw-semibold" style="cursor:pointer; white-space:nowrap;">
+                <span class="text-primary fw-semibold" style="cursor:pointer; white-space:nowrap;" data-bs-toggle="modal" data-bs-target="#filtrosAdminModal">
                     Filtro <i class="fa-solid fa-chevron-down ms-1"></i>
                 </span>
-            </div>
-            <button class="btn btn-primary d-flex align-items-center justify-content-center" style="width: 45px; height: 45px; border-radius: 12px;">
+            </form>
+            <button type="button" class="btn btn-primary d-flex align-items-center justify-content-center" style="width: 45px; height: 45px; border-radius: 12px;" data-bs-toggle="modal" data-bs-target="#iaAdminModal">
                 <i class="fa-solid fa-camera fs-5"></i>
             </button>
             <a href="perfil.php" class="d-flex align-items-center justify-content-center bg-light text-secondary rounded-circle text-decoration-none" style="width: 45px; height: 45px; font-size: 1.2rem;">
@@ -89,55 +105,27 @@ try {
     </header>
 
     <!-- Sidebar -->
-    <aside class="sidebar">
-        <div class="px-3 mb-3 mt-3">
-            <button class="btn btn-light w-100 d-flex align-items-center justify-content-center gap-2 fw-semibold border" style="border-radius: 12px; padding: 12px;">
-                <i class="fa-solid fa-plus text-primary"></i> Nuevo
-            </button>
-        </div>
-
-        <nav class="flex-grow-1">
-            <a href="dashboard.php" class="nav-item">
-                <i class="fa-solid fa-house"></i> Inicio
-            </a>
-            <a href="marcas.php" class="nav-item active">
-                <i class="fa-regular fa-star"></i> Marcas
-            </a>
-            <a href="repuestos.php" class="nav-item">
-                <i class="fa-solid fa-puzzle-piece"></i> Repuestos
-            </a>
-            <a href="catalogo.php" class="nav-item">
-                <i class="fa-solid fa-book"></i> Catálogo
-            </a>
-        </nav>
-
-        <div class="mt-auto border-top pt-3 pb-3">
-            <a href="#" class="nav-item">
-                <i class="fa-regular fa-circle-question"></i> Ayuda
-            </a>
-            <a href="perfil.php" class="nav-item">
-                <i class="fa-solid fa-gear"></i> Configuración
-            </a>
-        </div>
-    </aside>
+    <?php require_once 'sidebar.php'; ?>
 
     <main class="main-content">
 
         <div class="p-4 flex-grow-1">
             
-            <div class="hero-banner rounded p-4 mb-4 d-flex align-items-center justify-content-between">
-                <div class="ps-3 position-relative" style="z-index: 2;">
-                    <h2 class="fw-bold mb-1">Marcas</h2>
-                    <p class="mb-0 opacity-75">Todas las marcas disponibles.</p>
+                        <!-- Hero Banner -->
+            <div class="hero-banner rounded-3 p-4 ps-5 mb-4 d-flex align-items-center justify-content-between">
+                <div class="position-relative" style="z-index: 2; padding-left: 15px;">
+                    <h2 class="fw-bold mb-2 d-flex align-items-center gap-3">
+                        <i class="fa-solid fa-star" style="font-size: 1.4rem; opacity: .8;"></i>
+                        Gestión de Marcas
+                    </h2>
+                    <p class="mb-0 opacity-75" style="font-size: 1rem;">Administra los fabricantes y marcas del catálogo.</p>
                 </div>
-                
-                <button class="btn btn-light text-primary fw-bold px-4 py-2" data-bs-toggle="modal" data-bs-target="#marcaModal" onclick="openModal('add')" style="z-index: 2; border-radius: 8px;">
-                    <i class="fa-solid fa-plus me-2"></i> Nueva Marca
-                </button>
-                
+                <div class="d-flex align-items-center" style="z-index: 2; position: relative;">
+                    <button class="btn btn-light text-primary fw-bold px-4 py-2 shadow-sm" data-bs-toggle="modal" data-bs-target="#marcaModal" onclick="openModal('add')" style="border-radius: 8px;"><i class="fa-solid fa-plus me-2"></i> Nueva Marca</button>
+                </div>
                 <div class="hero-gears">
-                    <i class="fa-solid fa-gear" style="font-size: 120px; right: -20px; top: -60px;"></i>
-                    <i class="fa-solid fa-gear" style="font-size: 70px; right: 80px; top: -30px;"></i>
+                    <i class="fa-solid fa-gear" style="font-size: 110px; color: rgba(255,255,255,0.08); position: absolute; right: 0; top: -55px;"></i>
+                    <i class="fa-solid fa-gear" style="font-size: 65px; color: rgba(255,255,255,0.06); position: absolute; right: 85px; top: -25px;"></i>
                 </div>
             </div>
 
@@ -147,16 +135,21 @@ try {
                 <?php else: ?>
                     <?php foreach ($marcas as $marca): ?>
                     <div class="col-12 col-md-4 col-lg-3">
-                        <a href="repuestos.php?id_marca=<?php echo $marca['id']; ?>" class="brand-card bg-white d-flex align-items-center justify-content-center text-decoration-none">
+                        <a href="repuestos.php?id_marca=<?php echo $marca['id_marca']; ?>" class="brand-card bg-white d-flex flex-column align-items-center justify-content-center text-decoration-none p-3">
                             <div class="action-btns">
-                                <div class="btn-action btn-delete" title="Eliminar" onclick="event.preventDefault(); event.stopPropagation(); deleteMarca(<?php echo $marca['id']; ?>, '<?php echo addslashes(htmlspecialchars($marca['nombre'])); ?>')">
+                                <div class="btn-action btn-delete" title="Eliminar" onclick="event.preventDefault(); event.stopPropagation(); deleteMarca(<?php echo $marca['id_marca']; ?>, '<?php echo addslashes(htmlspecialchars($marca['nombre'])); ?>')">
                                     <i class="fa-solid fa-trash"></i>
                                 </div>
-                                <div class="btn-action btn-edit" title="Editar" onclick="event.preventDefault(); event.stopPropagation(); openModal('edit', <?php echo $marca['id']; ?>, '<?php echo addslashes(htmlspecialchars($marca['nombre'])); ?>')">
+                                <div class="btn-action btn-edit" title="Editar" onclick="event.preventDefault(); event.stopPropagation(); openModal('edit', <?php echo $marca['id_marca']; ?>, '<?php echo addslashes(htmlspecialchars($marca['nombre'])); ?>', '<?php echo addslashes(htmlspecialchars($marca['descripcion'] ?? '')); ?>')">
                                     <i class="fa-solid fa-pen"></i>
                                 </div>
                             </div>
-                            <span class="brand-name"><?php echo htmlspecialchars(strtoupper($marca['nombre'])); ?></span>
+                            <?php if(!empty($marca['imagen_url'])): ?>
+                                <img src="../../<?php echo htmlspecialchars($marca['imagen_url']); ?>" alt="<?php echo htmlspecialchars($marca['nombre']); ?>" style="max-height: 85px; width: 100%; object-fit: contain;">
+                            <?php else: ?>
+                                <i class="fa-solid fa-motorcycle text-muted fs-1 mb-2 opacity-25"></i>
+                                <span class="brand-name" style="font-size: 1.2rem;"><?php echo htmlspecialchars(strtoupper($marca['nombre'])); ?></span>
+                            <?php endif; ?>
                         </a>
                     </div>
                     <?php endforeach; ?>
@@ -174,7 +167,7 @@ try {
                     <h5 class="modal-title fw-bold" id="modalTitle">Nueva Marca</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <form id="marcaForm">
+                <form id="marcaForm" enctype="multipart/form-data">
                     <div class="modal-body p-4">
                         <input type="hidden" id="marca_id" name="id">
                         <input type="hidden" id="action" name="action" value="add">
@@ -182,6 +175,14 @@ try {
                         <div class="mb-3">
                             <label for="nombre" class="form-label fw-semibold text-secondary">Nombre de la Marca <span class="text-danger">*</span></label>
                             <input type="text" class="form-control" id="nombre" name="nombre" required style="border-radius: 10px; padding: 12px 15px;">
+                        </div>
+                        <div class="mb-3">
+                            <label for="imagen" class="form-label fw-semibold text-secondary">Logo de la Marca (Opcional)</label>
+                            <input type="file" class="form-control" id="imagen" name="imagen" accept="image/*" style="border-radius: 10px; padding: 12px 15px;">
+                        </div>
+                        <div class="mb-3">
+                            <label for="descripcion" class="form-label fw-semibold text-secondary">Descripción</label>
+                            <textarea class="form-control" id="descripcion" name="descripcion" rows="3" style="border-radius: 10px; padding: 12px 15px;"></textarea>
                         </div>
                     </div>
                     <div class="modal-footer border-top-0 pb-4 px-4">
@@ -198,10 +199,11 @@ try {
     <script>
         const marcaModal = new bootstrap.Modal(document.getElementById('marcaModal'));
         
-        function openModal(action, id = '', nombre = '') {
+        function openModal(action, id = '', nombre = '', descripcion = '') {
             document.getElementById('action').value = action;
             document.getElementById('marca_id').value = id;
             document.getElementById('nombre').value = nombre;
+            document.getElementById('descripcion').value = descripcion;
             document.getElementById('modalTitle').innerText = action === 'add' ? 'Nueva Marca' : 'Editar Marca';
             if(action === 'add') marcaModal.show();
             if(action === 'edit') marcaModal.show();
@@ -214,7 +216,7 @@ try {
             btnSave.disabled = true;
 
             try {
-                const response = await fetch('../../public/marcas_action.php', { method: 'POST', body: new FormData(this) });
+                const response = await fetch('../../controllers/marcas_action.php', { method: 'POST', body: new FormData(this) });
                 const data = await response.json();
                 
                 if (data.status === 'success') {
@@ -238,9 +240,9 @@ try {
                 confirmButtonText: 'Sí, eliminar', cancelButtonText: 'Cancelar'
             }).then(async (result) => {
                 if (result.isConfirmed) {
-                    const fd = new FormData(); fd.append('action', 'delete'); fd.append('id', id);
+                    const fd = new FormData(); fd.append('action', 'delete'); fd.append('id_marca', id);
                     try {
-                        const response = await fetch('../../public/marcas_action.php', { method: 'POST', body: fd });
+                        const response = await fetch('../../controllers/marcas_action.php', { method: 'POST', body: fd });
                         const data = await response.json();
                         if (data.status === 'success') {
                             Swal.fire({ icon: 'success', title: '¡Eliminada!', text: data.message, confirmButtonColor: '#004ba8' }).then(() => location.reload());
@@ -253,6 +255,241 @@ try {
                 }
             });
         }
+    </script>
+
+    <!-- Modal de Filtros (Admin) -->
+    <div class="modal fade" id="filtrosAdminModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title fw-bold text-primary">Filtros de Búsqueda</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <form id="adminSearchForm" action="repuestos.php" method="GET">
+                <input type="hidden" name="search" id="modalSearchInput" value="<?= htmlspecialchars($_GET['search'] ?? '') ?>">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Marca</label>
+                    <select name="marca" class="form-select">
+                        <option value="">Todas las marcas</option>
+                        <?php foreach($marcas_filter as $m): ?>
+                            <option value="<?= $m['id'] ?>"><?= htmlspecialchars($m['nombre']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Categoría</label>
+                    <select name="categoria" class="form-select">
+                        <option value="">Todas las categorías</option>
+                        <?php foreach($cat_filter as $c): ?>
+                            <option value="<?= $c['id'] ?>"><?= htmlspecialchars($c['nombre']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Modelo de Moto</label>
+                    <select name="modelo" class="form-select">
+                        <option value="">Todos los modelos</option>
+                        <?php foreach($mod_filter as $mod): ?>
+                            <option value="<?= htmlspecialchars($mod['modelo_moto']) ?>"><?= htmlspecialchars($mod['modelo_moto']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" onclick="window.location.href='repuestos.php'">Limpiar</button>
+            <button type="submit" form="adminSearchForm" class="btn btn-primary">Aplicar Filtros</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal IA (Reconocimiento Visual) -->
+    <div class="modal fade" id="iaAdminModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header bg-primary text-white">
+            <h5 class="modal-title fw-bold"><i class="fa-solid fa-microchip me-2"></i>Reconocimiento Visual IA</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" id="btnCloseIaModal"></button>
+          </div>
+          <div class="modal-body text-center py-4">
+            <div id="cameraContainer" class="position-relative mb-3" style="border-radius:10px; overflow:hidden; background:#000; height:350px; display:none;">
+                <video id="cameraVideo" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
+                <button class="btn btn-light position-absolute bottom-0 start-50 translate-middle-x mb-3 rounded-circle shadow d-flex align-items-center justify-content-center" id="btnSnapPhoto" style="width: 60px; height: 60px; z-index: 10;">
+                    <i class="fa-solid fa-camera fs-3 text-primary"></i>
+                </button>
+                <button class="btn btn-dark position-absolute top-0 end-0 m-2 rounded-circle shadow-sm" id="btnSwitchCamera" style="z-index: 10;">
+                    <i class="fa-solid fa-camera-rotate"></i>
+                </button>
+            </div>
+            <canvas id="cameraCanvas" class="d-none"></canvas>
+            <input type="file" id="aiImageInput" accept="image/*" class="d-none">
+            <div id="imagePreviewContainer" style="width:100%; height:350px; border:2px dashed #ccc; border-radius:10px; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#f8f9fa; position:relative; overflow:hidden;">
+                <div class="upload-placeholder" id="uploadPlaceholder" style="text-align:center; color:#888; padding:20px;">
+                    <i class="fa-solid fa-image" style="font-size:3rem; margin-bottom:10px; color:#004ba8;"></i>
+                    <p class="mb-2 fw-semibold">Selecciona o toma una foto del repuesto</p>
+                    <div class="mt-3">
+                        <button type="button" class="btn btn-primary me-2" id="btnStartCamera">
+                            <i class="fa-solid fa-video me-1"></i> Abrir Cámara
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('aiImageInput').click()">
+                            <i class="fa-solid fa-folder-open me-1"></i> Archivo
+                        </button>
+                    </div>
+                </div>
+                <img id="imagePreview" alt="Vista previa" style="width:100%; height:100%; object-fit:contain; display:none; background:#000;">
+                <button class="btn btn-danger btn-sm position-absolute top-0 end-0 m-2 d-none shadow-sm" id="btnRetakePhoto">
+                    <i class="fa-solid fa-trash me-1"></i> Eliminar
+                </button>
+            </div>
+            <div id="aiStatus" class="d-none mt-3">
+                <div class="d-flex align-items-center justify-content-center text-primary fw-bold" id="aiLoading">
+                    <div class="spinner-border me-2" role="status"><span class="visually-hidden">Analizando...</span></div>
+                    Analizando imagen con IA...
+                </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" id="btnCancelIa">Cancelar</button>
+            <button type="button" class="btn btn-primary" id="btnAnalyzeIa" disabled>
+                <i class="fa-solid fa-wand-magic-sparkles me-1"></i> Identificar Repuesto
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Sincronizar input de barra superior con modal de filtros
+        const topSearchInput = document.querySelector('.search-container input[name="search"]');
+        const modalSearchInput = document.getElementById('modalSearchInput');
+        if(topSearchInput && modalSearchInput) {
+            topSearchInput.addEventListener('input', function() {
+                modalSearchInput.value = this.value;
+            });
+        }
+
+        // --- IA Camera Script ---
+        const fileInput = document.getElementById('aiImageInput');
+        const previewContainer = document.getElementById('imagePreviewContainer');
+        const uploadPlaceholder = document.getElementById('uploadPlaceholder');
+        const imagePreview = document.getElementById('imagePreview');
+        const btnAnalyze = document.getElementById('btnAnalyzeIa');
+        const statusDiv = document.getElementById('aiStatus');
+        const loadingDiv = document.getElementById('aiLoading');
+        const btnRetakePhoto = document.getElementById('btnRetakePhoto');
+        
+        const cameraContainer = document.getElementById('cameraContainer');
+        const video = document.getElementById('cameraVideo');
+        const canvas = document.getElementById('cameraCanvas');
+        const btnStartCamera = document.getElementById('btnStartCamera');
+        const btnSnapPhoto = document.getElementById('btnSnapPhoto');
+        const btnSwitchCamera = document.getElementById('btnSwitchCamera');
+
+        let currentStream = null;
+        let useFrontCamera = false;
+        let photoBlob = null;
+
+        function stopMediaTracks(stream) {
+            if (stream) { stream.getTracks().forEach(track => track.stop()); }
+        }
+
+        async function startCamera() {
+            stopMediaTracks(currentStream);
+            const constraints = { video: { facingMode: useFrontCamera ? "user" : "environment" } };
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                currentStream = stream;
+                video.srcObject = stream;
+                previewContainer.style.display = 'none';
+                cameraContainer.style.display = 'block';
+                btnAnalyze.disabled = true;
+                photoBlob = null;
+            } catch (err) {
+                alert("No se pudo acceder a la cámara.");
+            }
+        }
+
+        if(btnStartCamera) btnStartCamera.addEventListener('click', startCamera);
+        if(btnSwitchCamera) btnSwitchCamera.addEventListener('click', () => { useFrontCamera = !useFrontCamera; startCamera(); });
+
+        if(btnSnapPhoto) {
+            btnSnapPhoto.addEventListener('click', () => {
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                canvas.getContext('2d').drawImage(video, 0, 0);
+                canvas.toBlob((blob) => {
+                    photoBlob = blob;
+                    imagePreview.src = URL.createObjectURL(blob);
+                    stopMediaTracks(currentStream);
+                    cameraContainer.style.display = 'none';
+                    previewContainer.style.display = 'flex';
+                    uploadPlaceholder.style.display = 'none';
+                    imagePreview.style.display = 'block';
+                    btnRetakePhoto.classList.remove('d-none');
+                    btnAnalyze.disabled = false;
+                }, 'image/jpeg', 0.9);
+            });
+        }
+        
+        if(fileInput) {
+            fileInput.addEventListener('change', function(e) {
+                if (e.target.files && e.target.files[0]) {
+                    photoBlob = e.target.files[0];
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        imagePreview.src = e.target.result;
+                        uploadPlaceholder.style.display = 'none';
+                        imagePreview.style.display = 'block';
+                        btnRetakePhoto.classList.remove('d-none');
+                        btnAnalyze.disabled = false;
+                    }
+                    reader.readAsDataURL(e.target.files[0]);
+                }
+            });
+        }
+
+        if(btnRetakePhoto) {
+            btnRetakePhoto.addEventListener('click', () => {
+                photoBlob = null;
+                imagePreview.src = '';
+                imagePreview.style.display = 'none';
+                btnRetakePhoto.classList.add('d-none');
+                uploadPlaceholder.style.display = 'block';
+                btnAnalyze.disabled = true;
+                if(fileInput) fileInput.value = '';
+            });
+        }
+
+        const iaModal = document.getElementById('iaAdminModal');
+        if(iaModal) {
+            iaModal.addEventListener('hidden.bs.modal', function () {
+                stopMediaTracks(currentStream);
+                cameraContainer.style.display = 'none';
+                previewContainer.style.display = 'flex';
+                if(fileInput) fileInput.value = '';
+                imagePreview.style.display = 'none';
+                btnRetakePhoto.classList.add('d-none');
+                uploadPlaceholder.style.display = 'block';
+                btnAnalyze.disabled = true;
+                photoBlob = null;
+                statusDiv.classList.add('d-none');
+            });
+        }
+        
+        if(btnAnalyze) {
+            btnAnalyze.addEventListener('click', () => {
+                btnAnalyze.disabled = true;
+                statusDiv.classList.remove('d-none');
+                loadingDiv.classList.remove('d-none');
+                setTimeout(() => {
+                    window.location.href = 'repuestos.php?search=Freno';
+                }, 1500);
+            });
+        }
+    });
     </script>
 </body>
 </html>

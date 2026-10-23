@@ -1,68 +1,108 @@
 <?php
+// Incluimos la conexión a la base de datos para poder buscar información
 require_once '../config/database.php';
 
-// Validar que exista el ID en la URL
+// Verificamos que en la dirección web (URL) venga el ID del repuesto que queremos ver
 $id = $_GET['id'] ?? null;
 
+// Si no nos dieron ningún ID, detenemos todo y mostramos un error
 if (!$id) {
     die("Error: No se especificó el ID del repuesto.");
 }
 
-// 1. Obtener la información principal del repuesto
+// Iniciamos o retomamos la sesión (para recordar si el usuario está conectado o su historial)
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+// Si el usuario no tiene un "historial" de visitas creado, se lo creamos vacío
+if (!isset($_SESSION['historial'])) {
+    $_SESSION['historial'] = [];
+}
+// Convertimos el ID a un número entero por seguridad
+$id_int = intval($id);
+// Si este repuesto NO está en su historial reciente...
+if (!in_array($id_int, $_SESSION['historial'])) {
+    // Lo agregamos al principio de la lista
+    array_unshift($_SESSION['historial'], $id_int);
+    // Si su historial ya tiene más de 5 repuestos, borramos el más antiguo
+    if (count($_SESSION['historial']) > 5) {
+        array_pop($_SESSION['historial']);
+    }
+} else {
+    // Si el repuesto YA estaba en su historial, lo sacamos de donde estaba 
+    // y lo volveamos a poner al principio (porque lo acaba de ver otra vez)
+    $key = array_search($id_int, $_SESSION['historial']);
+    unset($_SESSION['historial'][$key]);
+    array_unshift($_SESSION['historial'], $id_int);
+}
+
+// 1. Buscamos toda la información del repuesto en la base de datos
+// También traemos el nombre de su "Marca" y el nombre de su "Categoría"
 $query = "SELECT r.*, 
           m.nombre as marca_nombre, 
           c.nombre as categoria_nombre 
-          FROM repuestos r
-          LEFT JOIN marcas m ON r.marca_id = m.id
-          LEFT JOIN catalogos c ON r.catalogo_id = c.id
-          WHERE r.id = ?";
+          FROM REPUESTO r
+          LEFT JOIN MARCA m ON r.id_marca = m.id_marca
+          LEFT JOIN CATEGORIA c ON r.id_categoria = c.id_categoria
+          WHERE r.id_repuesto = ?";
           
 $stmt = $conn->prepare($query);
-$stmt->bind_param("i", $id);
+$stmt->bind_param("i", $id); // Ponemos el ID del repuesto en la búsqueda
 $stmt->execute();
 $result = $stmt->get_result();
 
+// Si la búsqueda no arrojó resultados, el repuesto no existe
 if ($result->num_rows === 0) {
     die("Error: Repuesto no encontrado en la base de datos.");
 }
 
+// Extraemos los datos del repuesto que encontramos
 $repuesto = $result->fetch_assoc();
 
-// 2. Obtener ubicacion de bodega
-$ubicacion_texto = "Bodega Principal";
-if (isset($repuesto['ubicacion_id']) && !empty($repuesto['ubicacion_id'])) {
-    $ubi_query = "SELECT * FROM ubicaciones WHERE id = ?";
-    $stmt_ubi = $conn->prepare($ubi_query);
-    $stmt_ubi->bind_param("i", $repuesto['ubicacion_id']);
-    $stmt_ubi->execute();
-    $res_ubi = $stmt_ubi->get_result();
-    if ($ubi = $res_ubi->fetch_assoc()) {
-        $ubicacion_texto = $ubi['nombre'] ?? '';
-        if(isset($ubi['pasillo'])) $ubicacion_texto .= " > Pasillo " . $ubi['pasillo'];
-        if(isset($ubi['estante'])) $ubicacion_texto .= " > Estante " . $ubi['estante'];
-    }
-} else if (isset($repuesto['ubicacion']) && !empty($repuesto['ubicacion'])) {
-    $ubicacion_texto = $repuesto['ubicacion'];
+// 1b. Buscamos la imagen principal asociada a este repuesto
+$queryImagen = "SELECT img.ruta_archivo 
+                FROM IMAGEN img 
+                INNER JOIN REPUESTO_IMAGEN ri ON img.id_imagen = ri.id_imagen 
+                WHERE ri.id_repuesto = ? AND img.estado = 'ACTIVO'
+                ORDER BY ri.imagen_principal DESC, ri.orden ASC 
+                LIMIT 1";
+$stmtImg = $conn->prepare($queryImagen);
+$stmtImg->bind_param("i", $id);
+$stmtImg->execute();
+$resultImg = $stmtImg->get_result();
+$imagen_repuesto = null;
+if ($resultImg->num_rows > 0) {
+    $filaImg = $resultImg->fetch_assoc();
+    $imagen_repuesto = $filaImg['ruta_archivo'];
 }
+$stmtImg->close();
 
-// 3. Obtener modelos de moto compatibles
+// 2. Ubicación: Por ahora es un texto fijo, pero en el futuro podría venir de la base de datos
+$ubicacion_texto = "Bodega Principal"; // Estático por defecto
+
+// 3. Obtenemos la lista de motos compatibles con este repuesto
 $motos_compatibles_array = [];
-$comp_query = "SELECT modelo_moto FROM repuesto_compatibilidad WHERE repuesto_id = ?";
-$stmt_comp = $conn->prepare($comp_query);
-$stmt_comp->bind_param("i", $id);
-$stmt_comp->execute();
-$res_comp = $stmt_comp->get_result();
-while ($row = $res_comp->fetch_assoc()) {
-    $motos_compatibles_array[] = $row['modelo_moto'];
+if (!empty($repuesto['compatibilidades'])) {
+    // Separamos el texto por comas para tener cada moto por separado
+    $motos_compatibles_array = array_map('trim', explode(',', $repuesto['compatibilidades']));
 }
+// Juntamos la lista para mostrarla bonita, o decimos que es Universal si no hay nada
 $motos_compatibles_texto = count($motos_compatibles_array) > 0 ? implode(", ", $motos_compatibles_array) : "Universal / No especificado";
 
-// Preparar los datos reales o fallbacks estáticos para el diseño
-$codigo_barras = htmlspecialchars($repuesto['codigo_barras'] ?? 'S/N');
-$nombre = htmlspecialchars($repuesto['nombre']);
+// 4. Preparamos los textos finales que se van a mostrar en la página.
+// Usamos "htmlspecialchars" para evitar que se ejecute código malicioso si alguien guardó algo raro en la base de datos.
+$codigo_mostrar = htmlspecialchars(!empty($repuesto['codigo_barras']) ? $repuesto['codigo_barras'] : ($repuesto['codigo_interno'] ?? 'S/N'));
+$codigo_real_db = !empty($repuesto['codigo_barras']) ? $repuesto['codigo_barras'] : '';
+$nombre = htmlspecialchars($repuesto['nombre'] ?? 'Sin Nombre');
 $marca = htmlspecialchars($repuesto['marca_nombre'] ?? 'Sin Marca');
 $categoria = htmlspecialchars($repuesto['categoria_nombre'] ?? 'General');
-$descripcion = !empty($repuesto['descripcion']) ? nl2br(htmlspecialchars($repuesto['descripcion'])) : "La biela es una pieza fundamental del motor que conecta el pistón con el cigüeñal, transformando el movimiento lineal en rotativo. Fabricada en acero forjado de alta resistencia, ofrece mayor durabilidad y rendimiento incluso en condiciones exigentes.";
+$descripcion = !empty($repuesto['descripcion']) ? nl2br(htmlspecialchars($repuesto['descripcion'])) : "Sin descripción detallada.";
+$caracteristicas = !empty($repuesto['caracteristicas']) ? nl2br(htmlspecialchars($repuesto['caracteristicas'])) : "No se especificaron características adicionales.";
+$observaciones = !empty($repuesto['observaciones']) ? nl2br(htmlspecialchars($repuesto['observaciones'])) : "Ninguna observación adicional.";
+$referencia = htmlspecialchars($repuesto['referencia_fabricante'] ?? 'N/A');
+$estado = htmlspecialchars($repuesto['estado'] ?? 'ACTIVO');
+$precio = isset($repuesto['precio']) ? number_format($repuesto['precio'], 2) : '0.00';
+$stock = isset($repuesto['stock']) ? intval($repuesto['stock']) : 0;
 
 ?>
 <!DOCTYPE html>
@@ -72,13 +112,12 @@ $descripcion = !empty($repuesto['descripcion']) ? nl2br(htmlspecialchars($repues
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?= $nombre ?> - Ficha Técnica</title>
     
-    <!-- Bootstrap 5 CSS -->
+    <!-- Archivos de diseño y tipos de letra externos -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- FontAwesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     
+    <!-- Aquí definimos los colores y estilos visuales de la página -->
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -87,7 +126,7 @@ $descripcion = !empty($repuesto['descripcion']) ? nl2br(htmlspecialchars($repues
             padding: 0;
         }
 
-        /* Variables de color según el mockup */
+        /* Colores principales guardados como variables para usarlos fácilmente */
         :root {
             --color-dark-blue: #041f5e;
             --color-light-blue-box: #91bfdf;
@@ -170,7 +209,7 @@ $descripcion = !empty($repuesto['descripcion']) ? nl2br(htmlspecialchars($repues
             margin: 0 auto;
         }
 
-        /* --- Columna Izquierda --- */
+        /* --- Columna Izquierda (Imagen y destacados) --- */
         .left-column {
             background: white;
             border-radius: 12px;
@@ -185,12 +224,13 @@ $descripcion = !empty($repuesto['descripcion']) ? nl2br(htmlspecialchars($repues
         .image-box {
             background-color: var(--color-light-blue-box);
             padding: 30px;
+            padding-top: 100px;
             position: relative;
             flex-grow: 1;
             display: flex;
             align-items: center;
             justify-content: center;
-            min-height: 400px;
+            min-height: 420px;
         }
 
         .codigo-badge {
@@ -198,6 +238,7 @@ $descripcion = !empty($repuesto['descripcion']) ? nl2br(htmlspecialchars($repues
             top: 30px;
             left: 30px;
             color: var(--color-text-navy);
+            z-index: 2;
         }
         .codigo-badge span {
             font-size: 0.75rem;
@@ -225,10 +266,15 @@ $descripcion = !empty($repuesto['descripcion']) ? nl2br(htmlspecialchars($repues
         }
 
         .product-image {
-            max-width: 90%;
-            max-height: 80%;
+            width: 100%;
+            height: 100%;
+            max-width: 100%;
+            max-height: 320px;
             object-fit: contain;
-            filter: drop-shadow(0px 20px 20px rgba(0,0,0,0.25));
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.85);
+            padding: 12px;
+            filter: drop-shadow(0px 15px 25px rgba(0,0,0,0.2));
         }
         
         .arrow-btn {
@@ -282,7 +328,7 @@ $descripcion = !empty($repuesto['descripcion']) ? nl2br(htmlspecialchars($repues
             line-height: 1.4;
         }
 
-        /* --- Columna Derecha --- */
+        /* --- Columna Derecha (Información y Detalles) --- */
         .right-column {
             background: white;
             border-radius: 12px;
@@ -366,7 +412,7 @@ $descripcion = !empty($repuesto['descripcion']) ? nl2br(htmlspecialchars($repues
             top: 2px;
         }
 
-        /* --- Accordions --- */
+        /* --- Acordeones (Cajas que se expanden y contraen) --- */
         .accordion-item {
             border: 1px solid #eee;
             border-radius: 8px !important;
@@ -432,46 +478,63 @@ $descripcion = !empty($repuesto['descripcion']) ? nl2br(htmlspecialchars($repues
         }
 
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body>
 
-    <!-- Header -->
+    <!-- Inicio de la Barra Superior -->
     <header class="top-navbar">
+        <!-- Título del Repuesto -->
         <h1 class="header-title"><?= $nombre ?></h1>
         
+        <!-- Buscador Falso (Solo es visual para regresar atrás) -->
         <div class="header-search-container">
-            <div class="search-pill">
+            <div class="search-pill" onclick="goBack()" style="cursor: pointer;">
                 <i class="fa-solid fa-magnifying-glass"></i>
-                <input type="text" placeholder="Búsqueda" readonly style="cursor: pointer;" onclick="window.location.href='index.php'">
+                <input type="text" placeholder="Búsqueda" readonly style="cursor: pointer; background: transparent; border: none; outline: none; color: white;">
             </div>
         </div>
 
-        <a href="index.php" class="btn-close-custom" title="Cerrar y volver">
+        <!-- Botón de Cerrar (Equis roja) -->
+        <a href="javascript:void(0)" onclick="goBack()" class="btn-close-custom" title="Cerrar y volver">
             <i class="fa-solid fa-xmark"></i>
         </a>
     </header>
 
-    <!-- Main Content -->
+    <!-- Inicio del Contenedor Principal (Donde está toda la información) -->
     <div class="main-container">
         <div class="row g-4">
             
-            <!-- Left Column -->
+            <!-- Columna Izquierda (Muestra la imagen y los destacados) -->
             <div class="col-lg-5">
                 <div class="left-column">
                     <div class="image-box">
+                        <!-- Pequeña etiqueta con el código de barras/interno -->
                         <div class="codigo-badge">
                             <span>Código</span>
-                            <h3><?= $codigo_barras ?></h3>
+                            <h3><?= $codigo_mostrar ?></h3>
+                            <?php if (!empty($codigo_real_db)): ?>
+                            <!-- Botón para descargar el código de barras como imagen -->
+                            <button onclick="descargarCodigoBarras('<?= addslashes($codigo_real_db) ?>')" class="btn btn-sm mt-2" style="background-color: rgba(255,255,255,0.6); color: var(--color-text-navy); font-weight: 600; border-radius: 20px; font-size: 0.75rem; border: 1px solid rgba(255,255,255,0.8); backdrop-filter: blur(4px);">
+                                <i class="fa-solid fa-barcode me-1"></i> Código de Barras
+                            </button>
+                            <?php endif; ?>
                         </div>
                         
-                        <!-- Imagen estática de demostración ya que la BD no suele almacenar binarios de imagen completos para esto -->
-                        <i class="fa-solid fa-gear" style="font-size: 150px; color: rgba(255,255,255,0.7); filter: drop-shadow(0px 10px 10px rgba(0,0,0,0.1));"></i>
-                        
-                        <div class="arrow-btn">
-                            <i class="fa-solid fa-chevron-right"></i>
-                        </div>
+                            <!-- Imagen del repuesto (si tiene imagen registrada la muestra, sino muestra un icono de engranaje) -->
+                            <?php if (!empty($imagen_repuesto)): ?>
+                                <img src="..<?= htmlspecialchars($imagen_repuesto) ?>" alt="<?= $nombre ?>" class="product-image">
+                            <?php else: ?>
+                                <i class="fa-solid fa-gear" style="font-size: 150px; color: rgba(255,255,255,0.7); filter: drop-shadow(0px 10px 10px rgba(0,0,0,0.1));"></i>
+                            <?php endif; ?>
+                            
+                            <!-- Botón decorativo de flecha -->
+                            <div class="arrow-btn">
+                                <i class="fa-solid fa-chevron-right"></i>
+                            </div>
                     </div>
                     
+                    <!-- Caja de textos destacados en la parte inferior de la imagen -->
                     <div class="highlights-box">
                         <div class="row g-3">
                             <div class="col-sm-4">
@@ -506,13 +569,30 @@ $descripcion = !empty($repuesto['descripcion']) ? nl2br(htmlspecialchars($repues
                 </div>
             </div>
 
-            <!-- Right Column -->
+            <!-- Columna Derecha (Muestra todos los detalles técnicos) -->
             <div class="col-lg-7">
                 <div class="right-column">
                     
                     <h4 class="section-title">Información del repuesto</h4>
                     
+                    <!-- Cuadrícula con los datos principales -->
                     <div class="info-grid">
+                        <div class="info-item">
+                            <div class="info-icon"><i class="fa-solid fa-tag text-success"></i></div>
+                            <div class="info-details">
+                                <h6>Precio de Venta:</h6>
+                                <p class="fw-bold text-success" style="font-size: 1.1rem;">$<?= $precio ?></p>
+                            </div>
+                        </div>
+
+                        <div class="info-item">
+                            <div class="info-icon"><i class="fa-solid fa-cubes text-primary"></i></div>
+                            <div class="info-details">
+                                <h6>Stock Disponible:</h6>
+                                <p class="fw-bold <?= $stock > 0 ? 'text-primary' : 'text-danger' ?>"><?= $stock ?> unidades</p>
+                            </div>
+                        </div>
+
                         <div class="info-item">
                             <div class="info-icon"><i class="fa-solid fa-shield"></i></div>
                             <div class="info-details">
@@ -545,78 +625,81 @@ $descripcion = !empty($repuesto['descripcion']) ? nl2br(htmlspecialchars($repues
                             </div>
                         </div>
 
-                        <!-- Datos estáticos (Simulados para el diseño) -->
                         <div class="info-item">
-                            <div class="info-icon"><i class="fa-solid fa-wrench"></i></div>
+                            <div class="info-icon"><i class="fa-solid fa-barcode"></i></div>
                             <div class="info-details">
-                                <h6>Cilindraje:</h6>
-                                <p>135cc, 180cc, 200cc</p>
+                                <h6>Ref. Fabricante:</h6>
+                                <p><?= $referencia ?></p>
                             </div>
                         </div>
 
                         <div class="info-item">
-                            <div class="info-icon"><i class="fa-solid fa-layer-group"></i></div>
+                            <div class="info-icon"><i class="fa-solid fa-circle-check"></i></div>
                             <div class="info-details">
-                                <h6>Material:</h6>
-                                <p>Acero forjado de alta resistencia</p>
+                                <h6>Estado:</h6>
+                                <p><?= $estado ?></p>
                             </div>
                         </div>
                     </div>
 
+                    <!-- Caja de Compra para Clientes -->
+                    <div class="card border-0 shadow-sm p-4 mb-4 rounded-4" style="background: linear-gradient(135deg, #f0f7ff 0%, #e0efff 100%); border-left: 5px solid #004ba8 !important;">
+                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                            <div>
+                                <span class="text-muted small fw-semibold text-uppercase">Disponible para compra inmediata</span>
+                                <div class="fs-3 fw-bold text-primary mb-0">$<?= $precio ?> <span class="fs-6 text-muted fw-normal">COP</span></div>
+                                <span class="badge <?= $stock > 0 ? 'bg-success' : 'bg-danger' ?> mt-1">
+                                    <?= $stock > 0 ? "Stock: $stock unidades" : 'Agotado' ?>
+                                </span>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <?php if ($stock > 0): ?>
+                                    <button type="button" class="btn btn-primary rounded-pill px-4 py-2 fw-semibold shadow-sm d-flex align-items-center gap-2" onclick="agregarAlCarrito(<?= $id_int ?>)">
+                                        <i class="fa-solid fa-cart-plus"></i> Añadir al Carrito
+                                    </button>
+                                    <a href="../views/cliente/carrito.php" class="btn btn-outline-primary rounded-pill px-3 py-2 fw-semibold" title="Ir al carrito">
+                                        <i class="fa-solid fa-cart-shopping"></i>
+                                    </a>
+                                <?php else: ?>
+                                    <button type="button" class="btn btn-secondary rounded-pill px-4 py-2" disabled>Agotado</button>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Descripción larga del producto -->
                     <h4 class="section-title">Detalles del producto</h4>
                     <p class="product-desc"><?= $descripcion ?></p>
-                    
-                    <ul class="product-bullets">
-                        <li>Diseñada para soportar altas cargas y temperaturas.</li>
-                        <li>Acabado preciso para un ajuste perfecto y reducción de fricción.</li>
-                        <li>Mejora la eficiencia del motor y prolonga su vida útil.</li>
-                        <li>Repuesto original de calidad garantizada.</li>
-                    </ul>
 
-                    <!-- Accordion -->
+                    <!-- Secciones colapsables (Acordeones) para información técnica extra -->
                     <div class="accordion" id="specsAccordion">
                         
+                        <!-- Caja de Características Principales -->
                         <div class="accordion-item">
                             <h2 class="accordion-header" id="headingOne">
                                 <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
-                                    <div class="accordion-icon"><i class="fa-solid fa-file-lines"></i></div>
-                                    Especificaciones técnicas
+                                    <div class="accordion-icon"><i class="fa-solid fa-list-check"></i></div>
+                                    Características Principales
                                 </button>
                             </h2>
                             <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#specsAccordion">
-                                <div class="accordion-body">
-                                    <table class="specs-table">
-                                        <tr>
-                                            <td>Longitud centro a centro:</td>
-                                            <td>116.20 mm</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Diámetro cabeza de biela (mayor):</td>
-                                            <td>47.00 mm</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Diámetro pie de biela (menor):</td>
-                                            <td>20.00 mm</td>
-                                        </tr>
-                                        <tr>
-                                            <td>Peso aproximado:</td>
-                                            <td>325 g</td>
-                                        </tr>
-                                    </table>
+                                <div class="accordion-body p-3 text-muted" style="font-size: 0.9rem;">
+                                    <?= $caracteristicas ?>
                                 </div>
                             </div>
                         </div>
 
+                        <!-- Caja de Observaciones -->
                         <div class="accordion-item">
                             <h2 class="accordion-header" id="headingTwo">
                                 <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
-                                    <div class="accordion-icon"><i class="fa-solid fa-border-all"></i></div>
-                                    Compatibilidad detallada
+                                    <div class="accordion-icon"><i class="fa-solid fa-clipboard-list"></i></div>
+                                    Observaciones Adicionales
                                 </button>
                             </h2>
                             <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#specsAccordion">
                                 <div class="accordion-body p-3 text-muted" style="font-size: 0.9rem;">
-                                    Este repuesto aplica para las motocicletas listadas en el apartado superior. Verifique siempre el manual de servicio para tolerancias específicas.
+                                    <?= $observaciones ?>
                                 </div>
                             </div>
                         </div>
@@ -629,7 +712,98 @@ $descripcion = !empty($repuesto['descripcion']) ? nl2br(htmlspecialchars($repues
         </div>
     </div>
 
-    <!-- Scripts -->
+    <!-- Scripts necesarios para hacer que funcionen los botones y los acordeones -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Función para regresar a la página anterior
+        function goBack() {
+            // Si el navegador sabe de dónde venimos, nos regresa ahí
+            if (document.referrer && document.referrer.includes(window.location.hostname)) {
+                window.history.back();
+            } else {
+                // Si entraron directo a este enlace, verificamos si es administrador
+                <?php if (isset($_SESSION['user_id'])): ?>
+                    window.location.href = '../views/admin/dashboard.php'; // Lo mandamos al panel
+                <?php else: ?>
+                    window.location.href = 'index.php'; // Lo mandamos al inicio
+                <?php endif; ?>
+            }
+        }
+
+        // Función que genera y descarga una imagen con el código de barras
+        function descargarCodigoBarras(texto) {
+            if (texto === 'S/N' || !texto) {
+                alert('Este repuesto no tiene un código asignado.');
+                return;
+            }
+            
+            // Cambiamos el texto del botón mientras carga la imagen
+            const btn = event.currentTarget;
+            const originalHtml = btn.innerHTML;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Descargando...';
+            btn.disabled = true;
+
+            // Usamos un servicio externo para generar el dibujo del código de barras
+            const url = `https://bwipjs-api.metafloor.com/?bcid=code128&text=${encodeURIComponent(texto)}&scale=3&includetext=true`;
+            
+            // Descargamos la imagen sin abrir otra pestaña
+            fetch(url)
+                .then(response => response.blob())
+                .then(blob => {
+                    const blobUrl = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = blobUrl;
+                    a.download = `CodigoBarras_${texto}.png`; // Nombre del archivo a guardar
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(blobUrl);
+                    
+                    // Volvemos el botón a la normalidad
+                    btn.innerHTML = originalHtml;
+                    btn.disabled = false;
+                })
+                .catch(error => {
+                    // Si algo falla, intentamos abrir la imagen en otra pestaña como plan B
+                    console.error('Error al descargar código de barras:', error);
+                    window.open(url, '_blank');
+                    btn.innerHTML = originalHtml;
+                    btn.disabled = false;
+                });
+        }
+
+        // Función para agregar al carrito desde la ficha técnica
+        function agregarAlCarrito(id) {
+            fetch('../controllers/cliente_pedido_action.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'agregar_carrito', id_repuesto: id, cantidad: 1 })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    Swal.fire({
+                        icon: 'success',
+                        title: '¡Añadido al Carrito!',
+                        text: data.message,
+                        showCancelButton: true,
+                        confirmButtonColor: '#004ba8',
+                        cancelButtonColor: '#64748b',
+                        confirmButtonText: 'Ver Carrito',
+                        cancelButtonText: 'Seguir Viendo'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            window.location.href = '../views/cliente/carrito.php';
+                        }
+                    });
+                } else {
+                    Swal.fire({ icon: 'warning', title: 'Atención', text: data.message });
+                }
+            })
+            .catch(err => {
+                Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo añadir al carrito.' });
+            });
+        }
+    </script>
 </body>
 </html>

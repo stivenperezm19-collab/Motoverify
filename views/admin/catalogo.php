@@ -1,18 +1,40 @@
 <?php
+// Iniciamos la sesión para recordar al administrador
 session_start();
+if (!isset($_SESSION['user_id']) || $_SESSION['rol'] !== 'Administrador') {
+    header('Location: ../../index.php');
+    exit;
+}
+// Conectamos a la base de datos
 require_once '../../config/database.php';
+require_once '../../models/CategoriaModel.php';
+require_once '../../models/MarcaModel.php';
+require_once '../../models/RepuestoModel.php';
 
+$catModel = new CategoriaModel($conn);
+$marcaModel = new MarcaModel($conn);
+$repModel = new RepuestoModel($conn);
+
+
+// Creamos una lista vacía para guardar las categorías
 $categorias = [];
 try {
-    $resCategorias = $conn->query("SELECT * FROM categorias ORDER BY nombre ASC");
+    // Buscamos todas las categorías en la base de datos junto con su imagen principal
+    $query = "SELECT c.*, i.ruta_archivo as imagen_url 
+              FROM CATEGORIA c 
+              LEFT JOIN CATEGORIA_IMAGEN ci ON c.id_categoria = ci.id_categoria AND ci.imagen_principal = 1
+              LEFT JOIN IMAGEN i ON ci.id_imagen = i.id_imagen 
+              ORDER BY c.nombre ASC";
+    $resCategorias = $conn->query($query);
     if ($resCategorias) {
         while ($c = $resCategorias->fetch_assoc()) {
-            $categorias[] = $c;
+            $categorias[] = $c; // Agregamos cada categoría encontrada a nuestra lista
         }
     }
 } catch (Exception $e) {}
 
-// Default categories for the motorcycle diagram (used when DB categories exist)
+// Si aún no hay categorías en la base de datos, usamos esta lista por defecto
+// Sirve para dar opciones iniciales cuando el sistema está vacío
 $defaultCats = [
     ['nombre' => 'Sistema de motor',         'desc' => 'Pistón, cilindro, culata, válvulas y más',         'icono' => 'fa-solid fa-gears',             'color' => '#1e40af'],
     ['nombre' => 'Sistema de transmisión',   'desc' => 'Embrague, caja de cambios, transmisión',           'icono' => 'fa-solid fa-arrows-spin',       'color' => '#059669'],
@@ -24,6 +46,11 @@ $defaultCats = [
     ['nombre' => 'Ruedas y neumáticos',      'desc' => 'Rines, llantas, cámaras, válvulas',               'icono' => 'fa-solid fa-circle-notch',      'color' => '#4338ca'],
     ['nombre' => 'Carrocería y accesorios',  'desc' => 'Carenados, espejos, direccionales, accesorios',   'icono' => 'fa-solid fa-motorcycle',        'color' => '#9333ea'],
 ];
+
+// Preparamos listas para los filtros de búsqueda en la barra superior
+$marcas_filter = $marcaModel->getAll();
+$cat_filter = $catModel->getAll();
+$mod_filter = $repModel->getModelos();
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -42,7 +69,7 @@ $defaultCats = [
         /* Topbar Global */
         .topbar-global { height: 110px; background: #ffffff; border-bottom: 1px solid #eaeaea; position: fixed; top: 0; left: 0; right: 0; z-index: 1050; }
         .topbar-logo { display: inline-flex; align-items: center; height: 100%; text-decoration: none; }
-        .topbar-logo img { max-height: 85px; width: auto; object-fit: contain; object-position: left center; margin-left: 5px; padding-right: 15px; }
+        .topbar-logo img { max-height: 90px; width: auto; object-fit: contain; object-position: left center; margin-left: 5px; padding-right: 15px; }
 
         .search-container { background: #ffffff; border: 1px solid #e0e0e0; border-radius: 12px; padding: 5px 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.02); }
         .search-container input { border: none; outline: none; box-shadow: none; }
@@ -110,7 +137,10 @@ $defaultCats = [
             color: #1e40af; font-size: 0.72rem; font-weight: 600; padding: 4px 10px;
             border-radius: 5px; white-space: nowrap; z-index: 5;
             box-shadow: 0 2px 8px rgba(59,130,246,0.12);
+            cursor: pointer; transition: all 0.2s ease;
+            text-decoration: none;
         }
+        .map-label:hover { background: #3b82f6; color: white; transform: translateY(-2px); }
         .map-dot {
             position: absolute; width: 8px; height: 8px; background: #3b82f6;
             border-radius: 50%; border: 2px solid white; box-shadow: 0 0 0 1px #3b82f6;
@@ -135,17 +165,17 @@ $defaultCats = [
 
     <header class="topbar-global px-4 d-flex align-items-center justify-content-between">
         <a href="dashboard.php" class="topbar-logo text-decoration-none">
-            <img src="assets/logo_motoverify.png?v=<?php echo time(); ?>" alt="Motoverify">
+            <img src="../../public/assets/images/logo_motoverify.png?v=<?php echo time(); ?>" alt="Motoverify">
         </a>
         <div class="d-flex align-items-center gap-3">
-            <div class="search-container d-flex align-items-center" style="width: 400px;">
-                <input type="text" class="form-control" placeholder="Pulsar135/180/NS200">
+            <form action="repuestos.php" method="GET" class="search-container d-flex align-items-center" style="width: 400px; margin-bottom: 0;">
+                <input type="text" name="search" class="form-control" placeholder="Pulsar135/180/NS200" value="<?= htmlspecialchars($_GET['search'] ?? '') ?>" style="background:transparent;">
                 <div class="vr mx-2"></div>
-                <span class="text-primary fw-semibold" style="cursor:pointer; white-space:nowrap;">
+                <span class="text-primary fw-semibold" style="cursor:pointer; white-space:nowrap;" data-bs-toggle="modal" data-bs-target="#filtrosAdminModal">
                     Filtro <i class="fa-solid fa-chevron-down ms-1"></i>
                 </span>
-            </div>
-            <button class="btn btn-primary d-flex align-items-center justify-content-center" style="width: 45px; height: 45px; border-radius: 12px;">
+            </form>
+            <button type="button" class="btn btn-primary d-flex align-items-center justify-content-center" style="width: 45px; height: 45px; border-radius: 12px;" data-bs-toggle="modal" data-bs-target="#iaAdminModal">
                 <i class="fa-solid fa-camera fs-5"></i>
             </button>
             <a href="perfil.php" class="d-flex align-items-center justify-content-center bg-light text-secondary rounded-circle text-decoration-none" style="width: 45px; height: 45px; font-size: 1.2rem;">
@@ -154,38 +184,7 @@ $defaultCats = [
         </div>
     </header>
 
-    <aside class="sidebar">
-
-        <div class="px-3 mb-3 mt-3">
-            <button class="btn btn-light w-100 d-flex align-items-center justify-content-center gap-2 fw-semibold border" style="border-radius: 12px; padding: 12px;" onclick="openCatModal('add')">
-                <i class="fa-solid fa-plus text-primary"></i> Nuevo
-            </button>
-        </div>
-
-        <nav class="flex-grow-1">
-            <a href="dashboard.php" class="nav-item">
-                <i class="fa-solid fa-house"></i> Inicio
-            </a>
-            <a href="marcas.php" class="nav-item">
-                <i class="fa-regular fa-star"></i> Marcas
-            </a>
-            <a href="repuestos.php" class="nav-item">
-                <i class="fa-solid fa-puzzle-piece"></i> Repuestos
-            </a>
-            <a href="catalogo.php" class="nav-item active">
-                <i class="fa-solid fa-book"></i> Catálogo
-            </a>
-        </nav>
-
-        <div class="mt-auto border-top pt-3 pb-3">
-            <a href="#" class="nav-item">
-                <i class="fa-regular fa-circle-question"></i> Ayuda
-            </a>
-            <a href="perfil.php" class="nav-item">
-                <i class="fa-solid fa-gear"></i> Configuración
-            </a>
-        </div>
-    </aside>
+    <?php require_once 'sidebar.php'; ?>
 
     <main class="main-content">
 
@@ -235,24 +234,29 @@ $defaultCats = [
                         $idx = 0;
                         foreach ($categorias as $cat):
                             $bgColor = $palette[$idx % count($palette)];
-                            $icon = !empty($cat['icono']) ? $cat['icono'] : 'fa-solid fa-cube';
                             $idx++;
                         ?>
-                        <div class="cat-item">
-                            <div class="cat-icon-box" style="background-color: <?php echo $bgColor; ?>;">
-                                <i class="<?php echo htmlspecialchars($icon); ?>"></i>
-                            </div>
-                            <div class="cat-item-info">
-                                <p class="cat-item-title"><?php echo htmlspecialchars($cat['nombre']); ?></p>
-                                <p class="cat-item-desc" title="<?php echo htmlspecialchars($cat['descripcion'] ?? ''); ?>">
-                                    <?php echo htmlspecialchars($cat['descripcion'] ?? 'Sin descripción'); ?>
-                                </p>
-                            </div>
-                            <div class="d-flex gap-1">
+                        <div class="cat-item p-0 d-flex justify-content-between align-items-center">
+                            <a href="repuestos.php?categoria=<?php echo $cat['id_categoria']; ?>" class="d-flex align-items-center flex-grow-1 text-decoration-none p-2" title="Ver repuestos de esta categoría">
+                                <div class="cat-icon-box" style="background-color: <?php echo $bgColor; ?>; overflow: hidden; padding: 5px;">
+                                    <?php if(!empty($cat['imagen_url'])): ?>
+                                        <img src="../../<?php echo htmlspecialchars($cat['imagen_url']); ?>" alt="Icono" style="width: 100%; height: 100%; object-fit: contain;">
+                                    <?php else: ?>
+                                        <i class="fa-solid fa-cube"></i>
+                                    <?php endif; ?>
+                                </div>
+                                <div class="cat-item-info ms-3">
+                                    <p class="cat-item-title mb-1"><?php echo htmlspecialchars($cat['nombre']); ?></p>
+                                    <p class="cat-item-desc mb-0" title="<?php echo htmlspecialchars($cat['descripcion'] ?? ''); ?>">
+                                        <?php echo htmlspecialchars($cat['descripcion'] ?? 'Sin descripción'); ?>
+                                    </p>
+                                </div>
+                            </a>
+                            <div class="d-flex gap-1 p-2">
                                 <button class="btn-edit-sm" title="Editar" onclick="openCatModal('edit', <?php echo htmlspecialchars(json_encode($cat)); ?>)">
                                     <i class="fa-solid fa-pen"></i>
                                 </button>
-                                <button class="btn-edit-sm" title="Eliminar" style="border-color: #fecaca; background: #fef2f2; color: #dc2626;" onclick="deleteCategoria(<?php echo $cat['id']; ?>, '<?php echo addslashes(htmlspecialchars($cat['nombre'])); ?>')">
+                                <button class="btn-edit-sm" title="Eliminar" style="border-color: #fecaca; background: #fef2f2; color: #dc2626;" onclick="deleteCategoria(<?php echo $cat['id_categoria']; ?>, '<?php echo addslashes(htmlspecialchars($cat['nombre'])); ?>')">
                                     <i class="fa-solid fa-trash"></i>
                                 </button>
                             </div>
@@ -267,33 +271,33 @@ $defaultCats = [
 
                     <div class="moto-diagram-container">
                         <div class="moto-image-wrapper">
-                            <img src="assets/motorcycle_diagram.png" alt="Diagrama de motocicleta" onerror="this.src='https://via.placeholder.com/700x400?text=Motocicleta';">
+                            <img src="../../public/assets/images/motorcycle_diagram.png" alt="Diagrama de motocicleta" onerror="this.src='https://via.placeholder.com/700x400?text=Motocicleta';">
 
                             <!-- Labels positioned around motorcycle -->
-                            <div class="map-label" style="top: 8%; left: 15%;">Sistema de combustible</div>
+                            <div class="map-label" style="top: 8%; left: 15%;" onclick="searchCategory('Sistema de combustible')">Sistema de combustible</div>
                             <div class="map-dot" style="top: 28%; left: 38%;"></div>
 
-                            <div class="map-label" style="top: 8%; right: 8%;">Sistema de motor</div>
+                            <div class="map-label" style="top: 8%; right: 8%;" onclick="searchCategory('Sistema de motor')">Sistema de motor</div>
                             <div class="map-dot" style="top: 32%; right: 30%;"></div>
 
-                            <div class="map-label" style="top: 38%; left: 5%;">Sistema eléctrico</div>
+                            <div class="map-label" style="top: 38%; left: 5%;" onclick="searchCategory('Sistema eléctrico')">Sistema eléctrico</div>
                             <div class="map-dot" style="top: 42%; left: 28%;"></div>
 
-                            <div class="map-label" style="top: 38%; right: 0%;">Suspensión</div>
+                            <div class="map-label" style="top: 38%; right: 0%;" onclick="searchCategory('Suspensión')">Suspensión</div>
                             <div class="map-dot" style="top: 45%; right: 18%;"></div>
 
-                            <div class="map-label" style="top: 62%; left: 8%;">Sistema de frenos</div>
+                            <div class="map-label" style="top: 62%; left: 8%;" onclick="searchCategory('Sistema de frenos')">Sistema de frenos</div>
                             <div class="map-dot" style="top: 60%; left: 30%;"></div>
 
-                            <div class="map-label" style="top: 62%; right: 0%;">Sistema de transmisión</div>
+                            <div class="map-label" style="top: 62%; right: 0%;" onclick="searchCategory('Sistema de transmisión')">Sistema de transmisión</div>
                             <div class="map-dot" style="top: 58%; right: 22%;"></div>
 
-                            <div class="map-label" style="bottom: 12%; left: 15%;">Ruedas y neumáticos</div>
+                            <div class="map-label" style="bottom: 12%; left: 15%;" onclick="searchCategory('Ruedas y neumáticos')">Ruedas y neumáticos</div>
                             <div class="map-dot" style="bottom: 18%; left: 32%;"></div>
 
-                            <div class="map-label" style="bottom: 5%; left: 38%;">Carrocería y accesorios</div>
+                            <div class="map-label" style="bottom: 5%; left: 38%;" onclick="searchCategory('Carrocería y accesorios')">Carrocería y accesorios</div>
 
-                            <div class="map-label" style="bottom: 12%; right: 5%;">Chasis y estructura</div>
+                            <div class="map-label" style="bottom: 12%; right: 5%;" onclick="searchCategory('Chasis y estructura')">Chasis y estructura</div>
                             <div class="map-dot" style="bottom: 22%; right: 25%;"></div>
                         </div>
 
@@ -318,7 +322,7 @@ $defaultCats = [
                     <h5 class="modal-title fw-bold" id="catModalTitle">Nueva Categoría</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <form id="catForm">
+                <form id="catForm" enctype="multipart/form-data">
                     <div class="modal-body p-4">
                         <input type="hidden" id="cat_id" name="id">
                         <input type="hidden" id="cat_action" name="action" value="add">
@@ -331,9 +335,9 @@ $defaultCats = [
                             <textarea class="form-control rounded-3" id="cat_descripcion" name="descripcion" rows="2" placeholder="Ej: Pistón, cilindro, culata..."></textarea>
                         </div>
                         <div class="mb-3">
-                            <label class="form-label fw-semibold text-secondary">Ícono (FontAwesome)</label>
-                            <input type="text" class="form-control rounded-3" id="cat_icono" name="icono" placeholder="Ej: fa-solid fa-gears">
-                            <div class="form-text">Copia la clase del ícono de <a href="https://fontawesome.com/icons" target="_blank">fontawesome.com</a>.</div>
+                            <label class="form-label fw-semibold text-secondary">Ícono o Imagen (Opcional)</label>
+                            <input type="file" class="form-control rounded-3" id="cat_imagen" name="imagen" accept="image/*">
+                            <div class="form-text">Puedes subir una imagen representativa para la categoría.</div>
                         </div>
                     </div>
                     <div class="modal-footer border-top-0 pb-4 px-4">
@@ -363,7 +367,7 @@ $defaultCats = [
                             <select class="form-select rounded-3" id="id_nueva_categoria" name="id_nueva_categoria" required>
                                 <option value="">Seleccione una categoría</option>
                                 <?php foreach ($categorias as $c): ?>
-                                    <option value="<?php echo $c['id']; ?>"><?php echo htmlspecialchars($c['nombre']); ?></option>
+                                    <option value="<?php echo $c['id_categoria']; ?>"><?php echo htmlspecialchars($c['nombre']); ?></option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
@@ -377,9 +381,248 @@ $defaultCats = [
         </div>
     </div>
 
+    <!-- Modal de Filtros (Admin) -->
+    <div class="modal fade" id="filtrosAdminModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title fw-bold text-primary">Filtros de Búsqueda</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <form id="adminSearchForm" action="repuestos.php" method="GET">
+                <input type="hidden" name="search" id="modalSearchInput" value="<?= htmlspecialchars($_GET['search'] ?? '') ?>">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Marca</label>
+                    <select name="marca" class="form-select">
+                        <option value="">Todas las marcas</option>
+                        <?php foreach($marcas_filter as $m): ?>
+                            <option value="<?= $m['id'] ?>" <?= (isset($_GET['marca']) && $_GET['marca'] == $m['id']) ? 'selected' : '' ?>>
+                                <?= htmlspecialchars($m['nombre']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Categoría</label>
+                    <select name="categoria" class="form-select">
+                        <option value="">Todas las categorías</option>
+                        <?php foreach($cat_filter as $c): ?>
+                            <option value="<?= $c['id'] ?>" <?= (isset($_GET['categoria']) && $_GET['categoria'] == $c['id']) ? 'selected' : '' ?>>
+                                <?= htmlspecialchars($c['nombre']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Modelo de Moto</label>
+                    <select name="modelo" class="form-select">
+                        <option value="">Todos los modelos</option>
+                        <?php foreach($mod_filter as $mod): ?>
+                            <option value="<?= htmlspecialchars($mod['modelo_moto']) ?>" <?= (isset($_GET['modelo']) && $_GET['modelo'] == $mod['modelo_moto']) ? 'selected' : '' ?>>
+                                <?= htmlspecialchars($mod['modelo_moto']) ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" onclick="window.location.href='repuestos.php'">Limpiar</button>
+            <button type="submit" form="adminSearchForm" class="btn btn-primary">Aplicar Filtros</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal IA (Reconocimiento Visual) -->
+    <div class="modal fade" id="iaAdminModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+          <div class="modal-header bg-primary text-white">
+            <h5 class="modal-title fw-bold"><i class="fa-solid fa-microchip me-2"></i>Reconocimiento Visual IA</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" id="btnCloseIaModal"></button>
+          </div>
+          <div class="modal-body text-center py-4">
+            <div id="cameraContainer" class="position-relative mb-3" style="border-radius:10px; overflow:hidden; background:#000; height:350px; display:none;">
+                <video id="cameraVideo" autoplay playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
+                <button class="btn btn-light position-absolute bottom-0 start-50 translate-middle-x mb-3 rounded-circle shadow d-flex align-items-center justify-content-center" id="btnSnapPhoto" style="width: 60px; height: 60px; z-index: 10;">
+                    <i class="fa-solid fa-camera fs-3 text-primary"></i>
+                </button>
+                <button class="btn btn-dark position-absolute top-0 end-0 m-2 rounded-circle shadow-sm" id="btnSwitchCamera" style="z-index: 10;">
+                    <i class="fa-solid fa-camera-rotate"></i>
+                </button>
+            </div>
+            <canvas id="cameraCanvas" class="d-none"></canvas>
+            <input type="file" id="aiImageInput" accept="image/*" class="d-none">
+            <div id="imagePreviewContainer" style="width:100%; height:350px; border:2px dashed #ccc; border-radius:10px; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#f8f9fa; position:relative; overflow:hidden;">
+                <div class="upload-placeholder" id="uploadPlaceholder" style="text-align:center; color:#888; padding:20px;">
+                    <i class="fa-solid fa-image" style="font-size:3rem; margin-bottom:10px; color:#004ba8;"></i>
+                    <p class="mb-2 fw-semibold">Selecciona o toma una foto del repuesto</p>
+                    <div class="mt-3">
+                        <button type="button" class="btn btn-primary me-2" id="btnStartCamera">
+                            <i class="fa-solid fa-video me-1"></i> Abrir Cámara
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" onclick="document.getElementById('aiImageInput').click()">
+                            <i class="fa-solid fa-folder-open me-1"></i> Archivo
+                        </button>
+                    </div>
+                </div>
+                <img id="imagePreview" alt="Vista previa" style="width:100%; height:100%; object-fit:contain; display:none; background:#000;">
+                <button class="btn btn-danger btn-sm position-absolute top-0 end-0 m-2 d-none shadow-sm" id="btnRetakePhoto">
+                    <i class="fa-solid fa-trash me-1"></i> Eliminar
+                </button>
+            </div>
+            <div id="aiStatus" class="d-none mt-3">
+                <div class="d-flex align-items-center justify-content-center text-primary fw-bold" id="aiLoading">
+                    <div class="spinner-border me-2" role="status"><span class="visually-hidden">Analizando...</span></div>
+                    Analizando imagen con IA...
+                </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" id="btnCancelIa">Cancelar</button>
+            <button type="button" class="btn btn-primary" id="btnAnalyzeIa" disabled>
+                <i class="fa-solid fa-wand-magic-sparkles me-1"></i> Identificar Repuesto
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Sincronizar input de barra superior con modal
+            const topSearchInput = document.querySelector('.search-container input[name="search"]');
+            const modalSearchInput = document.getElementById('modalSearchInput');
+            if(topSearchInput && modalSearchInput) {
+                topSearchInput.addEventListener('input', function() {
+                    modalSearchInput.value = this.value;
+                });
+            }
+
+            // --- IA Camera Script ---
+            const fileInput = document.getElementById('aiImageInput');
+            const previewContainer = document.getElementById('imagePreviewContainer');
+            const uploadPlaceholder = document.getElementById('uploadPlaceholder');
+            const imagePreview = document.getElementById('imagePreview');
+            const btnAnalyze = document.getElementById('btnAnalyzeIa');
+            const statusDiv = document.getElementById('aiStatus');
+            const loadingDiv = document.getElementById('aiLoading');
+            const btnRetakePhoto = document.getElementById('btnRetakePhoto');
+            
+            const cameraContainer = document.getElementById('cameraContainer');
+            const video = document.getElementById('cameraVideo');
+            const canvas = document.getElementById('cameraCanvas');
+            const btnStartCamera = document.getElementById('btnStartCamera');
+            const btnSnapPhoto = document.getElementById('btnSnapPhoto');
+            const btnSwitchCamera = document.getElementById('btnSwitchCamera');
+
+            let currentStream = null;
+            let useFrontCamera = false;
+            let photoBlob = null;
+
+            function stopMediaTracks(stream) {
+                if (stream) { stream.getTracks().forEach(track => track.stop()); }
+            }
+
+            async function startCamera() {
+                stopMediaTracks(currentStream);
+                const constraints = { video: { facingMode: useFrontCamera ? "user" : "environment" } };
+                try {
+                    const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                    currentStream = stream;
+                    video.srcObject = stream;
+                    previewContainer.style.display = 'none';
+                    cameraContainer.style.display = 'block';
+                    btnAnalyze.disabled = true;
+                    photoBlob = null;
+                } catch (err) {
+                    alert("No se pudo acceder a la cámara.");
+                }
+            }
+
+            if(btnStartCamera) btnStartCamera.addEventListener('click', startCamera);
+            if(btnSwitchCamera) btnSwitchCamera.addEventListener('click', () => { useFrontCamera = !useFrontCamera; startCamera(); });
+
+            if(btnSnapPhoto) {
+                btnSnapPhoto.addEventListener('click', () => {
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    canvas.getContext('2d').drawImage(video, 0, 0);
+                    canvas.toBlob((blob) => {
+                        photoBlob = blob;
+                        imagePreview.src = URL.createObjectURL(blob);
+                        stopMediaTracks(currentStream);
+                        cameraContainer.style.display = 'none';
+                        previewContainer.style.display = 'flex';
+                        uploadPlaceholder.style.display = 'none';
+                        imagePreview.style.display = 'block';
+                        btnRetakePhoto.classList.remove('d-none');
+                        btnAnalyze.disabled = false;
+                    }, 'image/jpeg', 0.9);
+                });
+            }
+            
+            if(fileInput) {
+                fileInput.addEventListener('change', function(e) {
+                    if (e.target.files && e.target.files[0]) {
+                        photoBlob = e.target.files[0];
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            imagePreview.src = e.target.result;
+                            uploadPlaceholder.style.display = 'none';
+                            imagePreview.style.display = 'block';
+                            btnRetakePhoto.classList.remove('d-none');
+                            btnAnalyze.disabled = false;
+                        }
+                        reader.readAsDataURL(e.target.files[0]);
+                    }
+                });
+            }
+
+            if(btnRetakePhoto) {
+                btnRetakePhoto.addEventListener('click', () => {
+                    photoBlob = null;
+                    imagePreview.src = '';
+                    imagePreview.style.display = 'none';
+                    btnRetakePhoto.classList.add('d-none');
+                    uploadPlaceholder.style.display = 'block';
+                    btnAnalyze.disabled = true;
+                    if(fileInput) fileInput.value = '';
+                });
+            }
+
+            const iaModal = document.getElementById('iaAdminModal');
+            if(iaModal) {
+                iaModal.addEventListener('hidden.bs.modal', function () {
+                    stopMediaTracks(currentStream);
+                    cameraContainer.style.display = 'none';
+                    previewContainer.style.display = 'flex';
+                    if(fileInput) fileInput.value = '';
+                    imagePreview.style.display = 'none';
+                    btnRetakePhoto.classList.add('d-none');
+                    uploadPlaceholder.style.display = 'block';
+                    btnAnalyze.disabled = true;
+                    photoBlob = null;
+                    statusDiv.classList.add('d-none');
+                });
+            }
+            
+            if(btnAnalyze) {
+                btnAnalyze.addEventListener('click', () => {
+                    btnAnalyze.disabled = true;
+                    statusDiv.classList.remove('d-none');
+                    loadingDiv.classList.remove('d-none');
+                    setTimeout(() => {
+                        window.location.href = 'repuestos.php?search=Freno';
+                    }, 1500);
+                });
+            }
+        });
+
         const catModal = new bootstrap.Modal(document.getElementById('catModal'));
         const reassignModal = new bootstrap.Modal(document.getElementById('reassignModal'));
         
@@ -391,10 +634,9 @@ $defaultCats = [
                 document.getElementById('cat_id').value = '';
             } else if (action === 'edit' && data) {
                 document.getElementById('catModalTitle').innerText = 'Editar Categoría';
-                document.getElementById('cat_id').value = data.id;
+                document.getElementById('cat_id').value = data.id_categoria || data.id;
                 document.getElementById('cat_nombre').value = data.nombre || '';
                 document.getElementById('cat_descripcion').value = data.descripcion || '';
-                document.getElementById('cat_icono').value = data.icono || '';
             }
             catModal.show();
         }
@@ -406,7 +648,7 @@ $defaultCats = [
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Guardando...';
             btn.disabled = true;
             try {
-                const res = await fetch('../../public/catalogo_action.php', { method: 'POST', body: new FormData(this) });
+                const res = await fetch('../../controllers/catalogo_action.php', { method: 'POST', body: new FormData(this) });
                 const data = await res.json();
                 if (data.status === 'success') {
                     catModal.hide();
@@ -428,7 +670,7 @@ $defaultCats = [
                 if (result.isConfirmed) {
                     const fd = new FormData(); fd.append('action', 'check_delete'); fd.append('id', id);
                     try {
-                        const res = await fetch('../../public/catalogo_action.php', { method: 'POST', body: fd });
+                        const res = await fetch('../../controllers/catalogo_action.php', { method: 'POST', body: fd });
                         const data = await res.json();
                         if (data.status === 'success' && data.needs_reassign) {
                             document.getElementById('delete_cat_id').value = id;
@@ -460,7 +702,7 @@ $defaultCats = [
             const fd = new FormData();
             fd.append('action', 'delete'); fd.append('id', id); fd.append('id_nueva_categoria', newId);
             try {
-                const res = await fetch('../../public/catalogo_action.php', { method: 'POST', body: fd });
+                const res = await fetch('../../controllers/catalogo_action.php', { method: 'POST', body: fd });
                 const data = await res.json();
                 if (data.status === 'success') {
                     reassignModal.hide();
@@ -472,6 +714,20 @@ $defaultCats = [
                 Swal.fire({ icon: 'error', title: 'Error', text: 'Problema de red.', confirmButtonColor: '#004ba8' });
             } finally {
                 if(btn) { btn.disabled = false; btn.innerHTML = 'Confirmar Eliminación'; }
+            }
+        }
+        function searchCategory(name) {
+            const categoryMap = {
+                <?php foreach($categorias as $c): ?>
+                "<?php echo strtolower($c['nombre']); ?>": <?php echo $c['id_categoria']; ?>,
+                <?php endforeach; ?>
+            };
+            
+            let key = name.toLowerCase();
+            if (categoryMap[key]) {
+                window.location.href = 'repuestos.php?categoria=' + categoryMap[key];
+            } else {
+                window.location.href = 'repuestos.php?search=' + encodeURIComponent(name);
             }
         }
     </script>
