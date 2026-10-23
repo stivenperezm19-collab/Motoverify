@@ -902,6 +902,203 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
             font-weight: 600;
             text-align: center;
         }
+
+        /* --- Quiénes Somos (Modern About Us Layout) --- */
+        .about-section {
+            padding: 85px 0 95px;
+            background-color: #ffffff;
+            border-top: 1px solid #f1f5f9;
+            position: relative;
+        }
+        .about-eyebrow {
+            font-size: 0.92rem;
+            font-weight: 700;
+            color: #059669;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+            text-transform: capitalize;
+        }
+        .about-hero-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            line-height: 1.2;
+            color: #0f172a;
+            letter-spacing: -0.7px;
+            margin-bottom: 24px;
+        }
+        .btn-about-cta {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background-color: #065f46;
+            color: #ffffff !important;
+            font-weight: 600;
+            font-size: 0.96rem;
+            padding: 13px 32px;
+            border-radius: 50px;
+            text-decoration: none;
+            box-shadow: 0 4px 15px rgba(6, 95, 70, 0.22);
+            transition: all 0.25s ease;
+        }
+        .btn-about-cta:hover {
+            background-color: #044e39;
+            box-shadow: 0 6px 20px rgba(6, 95, 70, 0.32);
+            transform: translateY(-2px);
+            color: #ffffff !important;
+        }
+        .about-hero-desc {
+            font-size: 1.05rem;
+            line-height: 1.75;
+            color: #475569;
+            margin-bottom: 0;
+            padding-top: 8px;
+        }
+
+        /* Tarjeta de Historia (Imagen grande) */
+        .about-story-card {
+            position: relative;
+            border-radius: 26px;
+            overflow: hidden;
+            min-height: 480px;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            border: none;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.35s ease;
+        }
+        .about-story-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 18px 40px rgba(0, 0, 0, 0.12);
+        }
+        .story-image-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-size: cover;
+            background-position: center;
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 0;
+        }
+        .about-story-card:hover .story-image-bg {
+            transform: scale(1.04);
+        }
+        .story-gradient-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(180deg, rgba(15, 23, 42, 0) 25%, rgba(15, 23, 42, 0.55) 60%, rgba(15, 23, 42, 0.95) 100%);
+            z-index: 1;
+        }
+        .story-content {
+            position: relative;
+            z-index: 2;
+            padding: 34px 38px;
+            color: #ffffff;
+        }
+        .story-title {
+            font-size: 1.85rem;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 12px;
+            letter-spacing: -0.3px;
+        }
+        .story-text {
+            font-size: 1rem;
+            line-height: 1.65;
+            color: rgba(255, 255, 255, 0.9);
+            margin: 0;
+        }
+
+        /* Tarjetas de Misión y Visión apiladas */
+        .about-stacked-cards {
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            height: 100%;
+        }
+        .about-mission-card {
+            background-color: #d1fae5;
+            border-radius: 26px;
+            border: none;
+            padding: 38px 40px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            box-shadow: 0 4px 18px rgba(16, 185, 129, 0.08);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .about-mission-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 30px rgba(16, 185, 129, 0.15);
+        }
+        .mission-title {
+            font-size: 1.7rem;
+            font-weight: 700;
+            color: #064e3b;
+            margin-bottom: 14px;
+            letter-spacing: -0.3px;
+        }
+        .mission-text {
+            font-size: 1.02rem;
+            line-height: 1.7;
+            color: #065f46;
+            margin: 0;
+            font-weight: 450;
+        }
+
+        .about-vision-card {
+            background-color: #065f46;
+            border-radius: 26px;
+            border: none;
+            padding: 38px 40px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            box-shadow: 0 8px 25px rgba(6, 95, 70, 0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .about-vision-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 14px 34px rgba(6, 95, 70, 0.3);
+        }
+        .vision-title {
+            font-size: 1.7rem;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 14px;
+            letter-spacing: -0.3px;
+        }
+        .vision-text {
+            font-size: 1.02rem;
+            line-height: 1.7;
+            color: rgba(255, 255, 255, 0.9);
+            margin: 0;
+            font-weight: 300;
+        }
+
+        @media (max-width: 991px) {
+            .about-hero-title {
+                font-size: 2.1rem;
+            }
+            .about-story-card {
+                min-height: 380px;
+            }
+            .story-content {
+                padding: 24px;
+            }
+            .about-mission-card, .about-vision-card {
+                padding: 28px 24px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -1085,68 +1282,57 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
         </div>
     </section>
 
-    <!-- Quiénes Somos Section -->
-    <section id="quienes-somos" class="py-5 position-relative mt-5" style="background-color: #f8fbfd; border-top: 1px solid #eef2f6;">
-        <div class="container py-4">
-            <div class="row mb-5 justify-content-center text-center">
-                <div class="col-lg-8">
-                    <span class="badge bg-primary text-uppercase px-3 py-2 rounded-pill mb-3 shadow-sm" style="letter-spacing: 1px; font-weight: 700;">Nuestra Esencia</span>
-                    <h2 class="fw-bold mb-3" style="color: #0b1c3c; font-size: 2.5rem; letter-spacing: -0.5px;">Quiénes Somos</h2>
-                    <p class="text-muted" style="font-size: 1.15rem; line-height: 1.7;">
-                        Conoce más sobre nuestra filosofía de trabajo, nuestros grandes objetivos y el inmenso valor que le otorgamos a cada persona que forma parte de nuestra organización.
+    <!-- Quiénes Somos Section (Estilo Profesional e Inspirado en Referencia) -->
+    <section id="quienes-somos" class="about-section">
+        <div class="container py-2">
+            <!-- Encabezado superior con dos columnas -->
+            <div class="row align-items-start mb-5 g-4">
+                <div class="col-lg-6">
+                    <div class="about-eyebrow">Quiénes Somos</div>
+                    <h2 class="about-hero-title">Impulsamos el futuro del motociclismo con tecnología y precisión</h2>
+                    <a href="../views/cliente/catalogo.php" class="btn-about-cta">
+                        Explorar Catálogo
+                    </a>
+                </div>
+                <div class="col-lg-6">
+                    <p class="about-hero-desc">
+                        En <strong>Motoverify</strong> transformamos la experiencia de búsqueda y compra de repuestos para motocicletas. Combinamos verificación visual inteligente con inteligencia artificial, fichas técnicas certificadas y un equipo humano apasionado por la ingeniería, garantizando que cada taller, almacén y motociclista reciba siempre la pieza exacta con máxima rapidez y total garantía.
                     </p>
                 </div>
             </div>
 
-            <div class="row g-4 mb-5">
-                <div class="col-md-6">
-                    <div class="card h-100 border-0" style="border-radius: 20px; background: #ffffff; box-shadow: 0 15px 35px rgba(0,0,0,0.03); transition: all 0.4s ease; cursor: default;" onmouseover="this.style.transform='translateY(-10px)'; this.style.boxShadow='0 25px 45px rgba(0,0,0,0.06)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 15px 35px rgba(0,0,0,0.03)'">
-                        <div class="card-body p-5">
-                            <div class="d-flex align-items-center mb-4">
-                                <div class="me-4 d-flex align-items-center justify-content-center shadow-sm" style="width: 70px; height: 70px; border-radius: 18px; background: linear-gradient(135deg, #004ba8 0%, #3b82f6 100%); color: white;">
-                                    <i class="fa-solid fa-rocket" style="font-size: 2rem;"></i>
-                                </div>
-                                <h3 class="fw-bold mb-0" style="color: #0b1c3c; font-size: 1.8rem;">Nuestra Misión</h3>
-                            </div>
-                            <p class="text-secondary mb-0" style="font-size: 1.1rem; line-height: 1.8;">
-                                Proveer soluciones tecnológicas e innovadoras para la identificación, venta y verificación de repuestos de motocicletas, garantizando la mayor precisión, velocidad y confianza en cada transacción comercial en todo el país.
+            <!-- Grid de Contenido: Historia a la izquierda, Misión y Visión apiladas a la derecha -->
+            <div class="row g-4 align-items-stretch">
+                <!-- Columna Izquierda: Tarjeta Grande con Foto de Historia -->
+                <div class="col-lg-7">
+                    <div class="card about-story-card">
+                        <div class="story-image-bg" style="background-image: url('assets/images/about_us_team.jpg');"></div>
+                        <div class="story-gradient-overlay"></div>
+                        <div class="story-content">
+                            <h3 class="story-title">Nuestra Historia</h3>
+                            <p class="story-text">
+                                Motoverify nació con la convicción de eliminar la incertidumbre al adquirir repuestos. Respaldados por algoritmos de verificación inteligente y la dedicación de nuestro talento humano, conectamos a mecánicos, distribuidores y apasionados de las dos ruedas con la información técnica más confiable y un catálogo de repuestos garantizados en todo el país.
                             </p>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-6">
-                    <div class="card h-100 border-0" style="border-radius: 20px; background: #ffffff; box-shadow: 0 15px 35px rgba(0,0,0,0.03); transition: all 0.4s ease; cursor: default;" onmouseover="this.style.transform='translateY(-10px)'; this.style.boxShadow='0 25px 45px rgba(0,0,0,0.06)'" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 15px 35px rgba(0,0,0,0.03)'">
-                        <div class="card-body p-5">
-                            <div class="d-flex align-items-center mb-4">
-                                <div class="me-4 d-flex align-items-center justify-content-center shadow-sm" style="width: 70px; height: 70px; border-radius: 18px; background: linear-gradient(135deg, #059669 0%, #10b981 100%); color: white;">
-                                    <i class="fa-solid fa-eye" style="font-size: 2rem;"></i>
-                                </div>
-                                <h3 class="fw-bold mb-0" style="color: #0b1c3c; font-size: 1.8rem;">Nuestra Visión</h3>
-                            </div>
-                            <p class="text-secondary mb-0" style="font-size: 1.1rem; line-height: 1.8;">
-                                Ser la plataforma líder a nivel nacional e internacional en la distribución y administración de repuestos de motocicletas, destacando por nuestra inteligencia artificial, excelencia en calidad de servicio y compromiso total con clientes y empleados.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
-            <div class="row mt-3">
-                <div class="col-12">
-                    <div class="card border-0 position-relative overflow-hidden" style="border-radius: 24px; background: linear-gradient(135deg, #003a8c 0%, #001a41 100%); box-shadow: 0 20px 40px rgba(0, 75, 168, 0.2);">
-                        <!-- Decoración de fondo -->
-                        <i class="fa-solid fa-users position-absolute" style="font-size: 25rem; color: rgba(255,255,255,0.03); right: -5%; top: -20%; pointer-events: none; transform: rotate(-15deg);"></i>
-                        <div class="position-absolute rounded-circle" style="width: 150px; height: 150px; background: rgba(255, 202, 40, 0.1); top: -50px; left: 10%; filter: blur(20px);"></div>
-                        
-                        <div class="card-body p-5 p-lg-5 text-center text-white position-relative" style="z-index: 1;">
-                            <div class="d-inline-flex align-items-center justify-content-center mb-4 shadow" style="width: 90px; height: 90px; background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); border-radius: 50%; border: 1px solid rgba(255,255,255,0.2);">
-                                <i class="fa-solid fa-handshake-angle" style="font-size: 3rem; color: #ffca28; filter: drop-shadow(0 0 10px rgba(255,202,40,0.5));"></i>
-                            </div>
-                            <h2 class="fw-bold mb-4" style="font-size: 2.5rem; text-shadow: 0 2px 4px rgba(0,0,0,0.3);">Lo más importante eres TÚ</h2>
-                            <p style="font-size: 1.2rem; line-height: 1.8; max-width: 900px; margin: 0 auto; color: rgba(255,255,255,0.9); font-weight: 300;">
-                                En <strong style="color: #ffca28;">Motoverify</strong> sabemos perfectamente que la tecnología no funciona sin el talento humano. 
-                                Como trabajador, <span class="fw-bold text-white">tú eres el motor fundamental</span> que impulsa nuestro crecimiento diario. Tu esfuerzo, tu compromiso y tu bienestar son nuestra mayor prioridad. 
-                                Juntos no solo construimos un excelente sistema, sino una familia laboral donde cada uno de tus aportes cuenta y es profundamente valorado.
+                <!-- Columna Derecha: Tarjetas Apiladas (Misión y Visión) -->
+                <div class="col-lg-5">
+                    <div class="about-stacked-cards">
+                        <!-- Tarjeta Misión -->
+                        <div class="card about-mission-card">
+                            <h3 class="mission-title">Nuestra Misión</h3>
+                            <p class="mission-text">
+                                Proveer soluciones tecnológicas e innovadoras para la identificación, venta y verificación de repuestos de motocicletas, garantizando la mayor precisión, velocidad y confianza en cada transacción comercial.
+                            </p>
+                        </div>
+
+                        <!-- Tarjeta Visión -->
+                        <div class="card about-vision-card">
+                            <h3 class="vision-title">Nuestra Visión</h3>
+                            <p class="vision-text">
+                                Ser la plataforma líder a nivel nacional e internacional en la distribución y administración de repuestos de motocicletas, destacando por nuestra inteligencia artificial, excelencia en servicio y compromiso con nuestro talento humano.
                             </p>
                         </div>
                     </div>
