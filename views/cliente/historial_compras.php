@@ -81,7 +81,7 @@ $pedidos = $ventaModel->getPedidosByCliente($id_cliente);
                                 <th>N° Pedido</th>
                                 <th>Fecha de Compra</th>
                                 <th>Artículos</th>
-                                <th>Dirección de Entrega</th>
+                                <th>Modalidad / Retiro</th>
                                 <th>Método de Pago</th>
                                 <th>Estado del Pedido</th>
                                 <th>Total</th>
@@ -92,9 +92,12 @@ $pedidos = $ventaModel->getPedidosByCliente($id_cliente);
                             <?php foreach ($pedidos as $p): 
                                 $badgeClass = 'bg-secondary text-white';
                                 if ($p['estado_pedido'] === 'Pendiente') $badgeClass = 'bg-warning text-dark';
+                                elseif ($p['estado_pedido'] === 'En Preparación') $badgeClass = 'bg-info text-dark fw-semibold';
+                                elseif ($p['estado_pedido'] === 'Listo para Pago') $badgeClass = 'bg-primary text-white fw-bold';
+                                elseif ($p['estado_pedido'] === 'Pagado') $badgeClass = 'bg-success text-white fw-bold';
                                 elseif ($p['estado_pedido'] === 'Confirmado') $badgeClass = 'bg-info text-white';
-                                elseif ($p['estado_pedido'] === 'En Camino') $badgeClass = 'bg-primary text-white';
-                                elseif ($p['estado_pedido'] === 'Entregado') $badgeClass = 'bg-success text-white';
+                                elseif ($p['estado_pedido'] === 'En Camino') $badgeClass = 'bg-dark text-white';
+                                elseif ($p['estado_pedido'] === 'Entregado') $badgeClass = 'bg-success-subtle text-success border border-success-subtle';
                                 elseif ($p['estado_pedido'] === 'Cancelado') $badgeClass = 'bg-danger text-white';
                             ?>
                                 <tr>
@@ -108,13 +111,13 @@ $pedidos = $ventaModel->getPedidosByCliente($id_cliente);
                                             <?= $p['total_items'] ?> unid.
                                         </span>
                                     </td>
-                                    <td class="small text-truncate" style="max-width: 200px;" title="<?= htmlspecialchars($p['direccion_envio'] ?? '') ?>, <?= htmlspecialchars($p['ciudad_envio'] ?? '') ?>">
-                                        <?= htmlspecialchars($p['direccion_envio'] ?? 'N/A') ?><br>
-                                        <span class="text-muted"><?= htmlspecialchars($p['ciudad_envio'] ?? '') ?></span>
+                                    <td class="small" style="max-width: 200px;">
+                                        <div class="fw-semibold text-dark"><i class="fa-solid fa-store text-primary me-1"></i>Retiro en Mostrador</div>
+                                        <span class="text-muted" style="font-size: 0.75rem;">En Establecimiento</span>
                                     </td>
                                     <td>
                                         <span class="badge bg-light text-secondary border">
-                                            <?= htmlspecialchars($p['metodo_pago'] ?? 'Contra Entrega') ?>
+                                            <?= htmlspecialchars($p['metodo_pago'] ?? 'Pago en Caja') ?>
                                         </span>
                                     </td>
                                     <td>
@@ -127,6 +130,11 @@ $pedidos = $ventaModel->getPedidosByCliente($id_cliente);
                                     </td>
                                     <td class="text-end">
                                         <div class="d-flex justify-content-end gap-2">
+                                            <?php if ($p['estado_pedido'] === 'Listo para Pago'): ?>
+                                                <a href="detalle_compra.php?id=<?= $p['id_venta'] ?>" class="btn btn-sm btn-success rounded-pill px-3 fw-bold shadow-sm" title="El vendedor ya preparó tu pedido. Haz clic para pagar en caja.">
+                                                    <i class="fa-solid fa-cash-register me-1"></i> Pagar en Caja
+                                                </a>
+                                            <?php endif; ?>
                                             <a href="detalle_compra.php?id=<?= $p['id_venta'] ?>" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-semibold" title="Ver detalle del pedido">
                                                 <i class="fa-solid fa-circle-info me-1"></i> Detalle
                                             </a>

@@ -274,20 +274,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             exit;
         }
 
-        // Validar datos de envío
-        $direccion = trim($inputData['direccion_envio'] ?? '');
-        $ciudad = trim($inputData['ciudad_envio'] ?? '');
+        // Datos de retiro en mostrador y contacto en el establecimiento
+        $nombre_receptor = trim($inputData['nombre_receptor'] ?? '');
+        $documento = trim($inputData['documento'] ?? '');
         $telefono = trim($inputData['telefono_contacto'] ?? '');
-        $metodo_pago = trim($inputData['metodo_pago'] ?? 'Contra Entrega');
+        $direccion = 'Retiro en Mostrador / Tienda Física';
+        $ciudad = 'En Establecimiento';
+        $metodo_pago = trim($inputData['metodo_pago'] ?? 'Pago en Caja');
         $notas = trim($inputData['notas'] ?? '');
-
-        if (empty($direccion) || empty($ciudad) || empty($telefono)) {
-            echo json_encode([
-                'status' => 'error',
-                'message' => 'Por favor completa todos los campos de entrega obligatorios (Dirección, Ciudad y Teléfono).'
-            ]);
-            exit;
-        }
 
         // Recalcular y validar todos los items estrictamente desde la base de datos
         $carritoCalculado = getDetallesCarritoDesdeBD($conn, $_SESSION['carrito']);
@@ -338,16 +332,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Vaciar carrito tras compra exitosa
             $_SESSION['carrito'] = [];
 
-            // También actualizar teléfono y dirección en el perfil del cliente si estaban vacíos
-            $conn->query("UPDATE CLIENTE 
-                          SET direccion = IF(direccion IS NULL OR direccion = '', '$direccion', direccion),
-                              ciudad = IF(ciudad IS NULL OR ciudad = '', '$ciudad', ciudad),
-                              telefono = IF(telefono IS NULL OR telefono = '', '$telefono', telefono)
-                          WHERE id_cliente = $id_cliente");
+            // Actualizar teléfono o documento en el perfil del cliente si estaban vacíos
+            if (!empty($documento) || !empty($telefono)) {
+                $docEsc = $conn->real_escape_string($documento);
+                $telEsc = $conn->real_escape_string($telefono);
+                $conn->query("UPDATE CLIENTE 
+                              SET documento = IF(documento IS NULL OR documento = '', '$docEsc', documento),
+                                  telefono = IF(telefono IS NULL OR telefono = '', '$telEsc', telefono)
+                              WHERE id_cliente = $id_cliente");
+            }
 
             echo json_encode([
                 'status' => 'success',
-                'message' => '¡Tu pedido ha sido confirmado y registrado con éxito!',
+                'message' => '¡Tu pedido ha sido enviado con éxito! El vendedor preparará tus repuestos en bodega. Podrás acercarte a la caja a pagar y retirar tus productos.',
                 'id_venta' => $id_venta,
                 'redirect' => 'detalle_compra.php?id=' . $id_venta
             ]);
@@ -356,6 +353,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             echo json_encode([
                 'status' => 'error',
                 'message' => 'No se pudo completar el pedido. Es posible que el stock haya cambiado. Por favor revisa tu carrito.'
+            ]);
+            exit;
+        }
+    }
+
+    // 6. PROCEDER AL PAGO DEL PEDIDO PREPARADO
+    if ($action === 'pagar_pedido') {
+        if (!isset($_SESSION['user_id']) || !isset($_SESSION['rol']) || $_SESSION['rol'] !== 'Cliente') {
+            echo json_encode([
+                'status' => 'error',
+                'auth_required' => true,
+                'message' => 'Debes iniciar sesión con tu cuenta de Cliente para realizar el pago.'
+            ]);
+            exit;
+        }
+
+        $id_cliente = (int)$_SESSION['user_id'];
+        $id_venta = (int)($inputData['id_venta'] ?? 0);
+        $metodo_pago = trim($inputData['metodo_pago'] ?? '');
+        $comprobante = trim($inputData['comprobante'] ?? '');
+
+        if ($id_venta <= 0) {
+            echo json_encode(['status' => 'error', 'message' => 'Identificador de pedido no válido.']);
+            exit;
+        }
+
+        if (empty($metodo_pago)) {
+            echo json_encode(['status' => 'error', 'message' => 'Por favor selecciona un método de pago válido.']);
+            exit;
+        }
+
+        $ok = $ventaModel->procesarPagoCliente($id_venta, $id_cliente, $metodo_pago, $comprobante);
+
+        if ($ok) {
+            echo json_encode([
+                'status' => 'success',
+                'message' => '¡Pago registrado y confirmado exitosamente! Tu pedido ahora está pagado y el vendedor procederá con el despacho.',
+                'id_venta' => $id_venta
+            ]);
+            exit;
+        } else {
+            echo json_encode([
+                'status' => 'error',
+                'message' => 'No se pudo registrar el pago. Verifica que el pedido esté en estado "Listo para Pago" y pertenezca a tu cuenta.'
             ]);
             exit;
         }

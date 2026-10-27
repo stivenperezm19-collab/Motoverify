@@ -214,8 +214,8 @@ $total = $subtotal + $impuestos;
                                 <span class="fw-semibold text-dark">$<?= number_format($impuestos, 0, ',', '.') ?></span>
                             </div>
                             <div class="d-flex justify-content-between text-muted mb-3 pb-3 border-bottom">
-                                <span>Envío</span>
-                                <span class="text-success fw-semibold">Gratis a domicilio</span>
+                                <span>Modalidad de Entrega</span>
+                                <span class="text-primary fw-semibold"><i class="fa-solid fa-store me-1"></i> Retiro en Mostrador</span>
                             </div>
                             <div class="d-flex justify-content-between align-items-center">
                                 <span class="fw-bold text-dark fs-5">Total a Pagar:</span>
@@ -224,12 +224,15 @@ $total = $subtotal + $impuestos;
                         </div>
 
                         <?php if ($is_cliente_auth): ?>
-                            <a href="checkout.php" class="btn btn-success btn-lg w-100 rounded-pill py-3 fw-bold d-flex align-items-center justify-content-center gap-2 shadow-sm mb-3">
-                                <i class="fa-solid fa-shield-check"></i> Proceder al Pago
+                            <a href="checkout.php" class="btn btn-primary btn-lg w-100 rounded-pill py-3 fw-bold d-flex align-items-center justify-content-center gap-2 shadow-sm mb-3" style="background: #004ba8; border: none;">
+                                <i class="fa-solid fa-clipboard-list"></i> Continuar con el Pedido
                             </a>
+                            <div class="bg-light border rounded-3 p-2 text-center small text-muted mb-3" style="font-size: 0.8rem;">
+                                <i class="fa-solid fa-circle-info text-primary me-1"></i> El vendedor alista tus repuestos en bodega y pagarás directamente en la caja de la tienda al recibirlos.
+                            </div>
                         <?php else: ?>
                             <a href="../../public/index.php?login=1" class="btn btn-primary btn-lg w-100 rounded-pill py-3 fw-bold d-flex align-items-center justify-content-center gap-2 shadow-sm mb-2" style="background: #004ba8; border: none;">
-                                <i class="fa-solid fa-arrow-right-to-bracket"></i> Inicia Sesión para Comprar
+                                <i class="fa-solid fa-arrow-right-to-bracket"></i> Inicia Sesión para Ordenar
                             </a>
                             <p class="text-center text-muted small mb-3">
                                 ¿No tienes cuenta? <a href="../../public/index.php?register=1" class="text-primary fw-bold text-decoration-none">Regístrate gratis</a>
@@ -237,8 +240,8 @@ $total = $subtotal + $impuestos;
                         <?php endif; ?>
 
                         <div class="text-center text-muted small">
-                            <p class="mb-1"><i class="fa-solid fa-truck-fast text-primary me-1"></i> Envío rápido con pago Contra Entrega</p>
-                            <p class="mb-0"><i class="fa-solid fa-lock text-success me-1"></i> Compra segura y garantizada</p>
+                            <p class="mb-1"><i class="fa-solid fa-boxes-packing text-primary me-1"></i> Alistamiento en bodega del establecimiento</p>
+                            <p class="mb-0"><i class="fa-solid fa-cash-register text-success me-1"></i> Pago directo en la caja de la tienda</p>
                         </div>
                     </div>
                 </div>

@@ -202,6 +202,34 @@ if (isset($_SESSION['carrito']) && is_array($_SESSION['carrito'])) {
                 </div>
             </div>
 
+            <?php 
+            $pedidoListoParaPago = null;
+            if (!empty($pedidos)) {
+                foreach ($pedidos as $pedCheck) {
+                    if ($pedCheck['estado_pedido'] === 'Listo para Pago') {
+                        $pedidoListoParaPago = $pedCheck;
+                        break;
+                    }
+                }
+            }
+            ?>
+            <?php if ($pedidoListoParaPago): ?>
+                <div class="alert alert-success border-success-subtle rounded-4 p-3 mb-4 shadow-sm d-flex flex-wrap align-items-center justify-content-between gap-3" style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="bg-success text-white rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 48px; height: 48px;">
+                            <i class="fa-solid fa-bell fs-5"></i>
+                        </div>
+                        <div>
+                            <h6 class="fw-bold text-success mb-1">¡Tu pedido #<?= str_pad($pedidoListoParaPago['id_venta'], 5, '0', STR_PAD_LEFT) ?> ya fue preparado por el vendedor!</h6>
+                            <span class="text-dark small">Los repuestos están verificados y listos. Acércate a la caja de la tienda con tu número de pedido para pagar y retirarlos.</span>
+                        </div>
+                    </div>
+                    <a href="detalle_compra.php?id=<?= $pedidoListoParaPago['id_venta'] ?>" class="btn btn-success fw-bold rounded-pill px-4 shadow-sm">
+                        <i class="fa-solid fa-cash-register me-1"></i> Pagar en Caja ($<?= number_format($pedidoListoParaPago['total'], 0, ',', '.') ?>)
+                    </a>
+                </div>
+            <?php endif; ?>
+
             <!-- Stats Widgets -->
             <div class="row g-3 mb-4">
                 <div class="col-12 col-sm-6 col-xl-3">
@@ -411,8 +439,11 @@ if (isset($_SESSION['carrito']) && is_array($_SESSION['carrito'])) {
                                 <?php foreach ($pedidosRecientes as $p): 
                                     $badgeClass = 'bg-secondary';
                                     if ($p['estado_pedido'] === 'Pendiente') $badgeClass = 'bg-warning text-dark';
+                                    elseif ($p['estado_pedido'] === 'En Preparación') $badgeClass = 'bg-info text-dark fw-semibold';
+                                    elseif ($p['estado_pedido'] === 'Listo para Pago') $badgeClass = 'bg-primary text-white fw-bold';
+                                    elseif ($p['estado_pedido'] === 'Pagado') $badgeClass = 'bg-success text-white fw-bold';
                                     elseif ($p['estado_pedido'] === 'Confirmado') $badgeClass = 'bg-info text-white';
-                                    elseif ($p['estado_pedido'] === 'En Camino') $badgeClass = 'bg-primary text-white';
+                                    elseif ($p['estado_pedido'] === 'En Camino') $badgeClass = 'bg-dark text-white';
                                     elseif ($p['estado_pedido'] === 'Entregado') $badgeClass = 'bg-success text-white';
                                     elseif ($p['estado_pedido'] === 'Cancelado') $badgeClass = 'bg-danger text-white';
                                 ?>
@@ -428,6 +459,11 @@ if (isset($_SESSION['carrito']) && is_array($_SESSION['carrito'])) {
                                         </td>
                                         <td class="fw-bold text-dark">$<?= number_format($p['total'], 0, ',', '.') ?></td>
                                         <td class="text-end">
+                                            <?php if ($p['estado_pedido'] === 'Listo para Pago'): ?>
+                                                <a href="detalle_compra.php?id=<?= $p['id_venta'] ?>" class="btn btn-sm btn-success rounded-pill px-3 fw-bold shadow-sm me-1">
+                                                    <i class="fa-solid fa-credit-card me-1"></i> Pagar
+                                                </a>
+                                            <?php endif; ?>
                                             <a href="detalle_compra.php?id=<?= $p['id_venta'] ?>" class="btn btn-sm btn-outline-primary rounded-pill px-3">
                                                 <i class="fa-solid fa-circle-info me-1"></i> Detalle
                                             </a>

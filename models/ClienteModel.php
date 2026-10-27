@@ -149,7 +149,7 @@ class ClienteModel {
         $query = "SELECT 
                     COUNT(*) as total_pedidos,
                     COALESCE(SUM(total), 0) as total_gastado,
-                    SUM(CASE WHEN estado_pedido IN ('Pendiente', 'Confirmado', 'En Camino') THEN 1 ELSE 0 END) as pedidos_pendientes,
+                    SUM(CASE WHEN estado_pedido IN ('Pendiente', 'En Preparación', 'Listo para Pago', 'Pagado', 'Confirmado', 'En Camino') THEN 1 ELSE 0 END) as pedidos_pendientes,
                     SUM(CASE WHEN estado_pedido = 'Entregado' THEN 1 ELSE 0 END) as pedidos_entregados
                   FROM VENTA 
                   WHERE id_cliente = ? AND estado != 'Cancelada'";

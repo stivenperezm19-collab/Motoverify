@@ -205,6 +205,23 @@ try {
                 </div>
             </div>
 
+            <?php if ($total_pedidos_pendientes > 0): ?>
+                <div class="alert alert-warning border-warning-subtle rounded-4 p-3 mb-4 shadow-sm d-flex flex-wrap align-items-center justify-content-between gap-3">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="bg-warning text-dark rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 46px; height: 46px;">
+                            <i class="fa-solid fa-boxes-packing fs-5"></i>
+                        </div>
+                        <div>
+                            <h6 class="fw-bold mb-0 text-dark">Tienes <?= $total_pedidos_pendientes ?> <?= $total_pedidos_pendientes === 1 ? 'pedido de cliente pendiente' : 'pedidos de clientes pendientes' ?> de revisión</h6>
+                            <span class="text-muted small">Los clientes esperan que revises y prepares los repuestos para proceder al pago.</span>
+                        </div>
+                    </div>
+                    <a href="pedidos.php" class="btn btn-warning fw-bold rounded-pill px-4 shadow-sm text-dark">
+                        <i class="fa-solid fa-arrow-right me-1"></i> Ir a Preparar Pedidos
+                    </a>
+                </div>
+            <?php endif; ?>
+
             <?php if ($filterMarca > 0): ?>
                 <div class="alert alert-info d-flex align-items-center justify-content-between" role="alert">
                     <span>Mostrando repuestos filtrados por marca.</span>
