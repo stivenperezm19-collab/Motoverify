@@ -135,27 +135,60 @@ $total = $subtotal + $impuestos;
             <ol class="breadcrumb">
                 <li class="breadcrumb-item"><a href="dashboard.php" class="text-decoration-none">Inicio</a></li>
                 <li class="breadcrumb-item"><a href="carrito.php" class="text-decoration-none">Carrito</a></li>
-                <li class="breadcrumb-item active" aria-current="page">Confirmación del Pedido</li>
+                <li class="breadcrumb-item active" aria-current="page">Solicitar Pedido</li>
             </ol>
         </nav>
 
-        <h2 class="fw-bold text-dark mb-4">Finalizar Compra</h2>
+        <div class="d-flex align-items-center justify-content-between mb-4">
+            <div>
+                <h2 class="fw-bold text-dark mb-1">Solicitud de Pedido en Establecimiento</h2>
+                <p class="text-muted mb-0">Envía tu pedido para que el vendedor aliste tus repuestos en bodega y puedas pagarlos y retirarlos en la caja.</p>
+            </div>
+        </div>
+
+        <!-- Banner Explicativo del Flujo en Tienda -->
+        <div class="alert alert-primary border-primary-subtle rounded-4 p-3 mb-4 shadow-sm" style="background: linear-gradient(135deg, #f0f7ff 0%, #e0effe 100%);">
+            <div class="d-flex align-items-center gap-3">
+                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 44px; height: 44px;">
+                    <i class="fa-solid fa-store fs-5"></i>
+                </div>
+                <div>
+                    <h6 class="fw-bold text-primary mb-1">¿Cómo funciona tu pedido dentro del establecimiento?</h6>
+                    <div class="text-dark small">
+                        <strong>1. Solicitas el pedido:</strong> Confirmas los repuestos que necesitas. &nbsp;|&nbsp; 
+                        <strong>2. Preparación en bodega:</strong> El vendedor busca y alista tus productos. &nbsp;|&nbsp; 
+                        <strong>3. Pago y entrega en caja:</strong> Te acercas a la caja con tu código de pedido, pagas y recibes tus repuestos en mano.
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <form id="checkoutForm">
+            <input type="hidden" name="ciudad_envio" value="En Establecimiento">
+            <input type="hidden" name="direccion_envio" value="Retiro en Mostrador / Tienda Física">
+
             <div class="row g-4">
-                <!-- Columna Formulario de Envío y Pago -->
+                <!-- Columna Formulario de Retiro y Pago en Caja -->
                 <div class="col-12 col-lg-7">
                     
-                    <!-- 1. Datos de Entrega -->
+                    <!-- 1. Datos del Cliente y Retiro -->
                     <div class="checkout-card">
                         <h4 class="checkout-title">
                             <span class="badge bg-primary rounded-circle" style="width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center;">1</span>
-                            Datos de Entrega y Envío
+                            Datos del Cliente y Retiro en Mostrador
                         </h4>
+
+                        <div class="alert alert-light border rounded-3 d-flex align-items-center gap-3 mb-3 py-2 px-3">
+                            <i class="fa-solid fa-location-dot text-primary fs-4"></i>
+                            <div>
+                                <strong class="text-dark small d-block">Punto de Entrega: Mostrador Principal / Establecimiento</strong>
+                                <span class="text-muted" style="font-size: 0.8rem;">Todo el proceso se realiza presencialmente en la tienda. No se efectúan envíos por encomienda ni transporte externo.</span>
+                            </div>
+                        </div>
 
                         <div class="row g-3">
                             <div class="col-12 col-md-6">
-                                <label class="form-label small fw-semibold text-muted">Nombre del Destinatario *</label>
+                                <label class="form-label small fw-semibold text-muted">Nombre del Cliente *</label>
                                 <input type="text" name="nombre_receptor" class="form-control form-control-custom" value="<?= htmlspecialchars($cliente['nombre'] ?? '') ?>" required>
                             </div>
                             <div class="col-12 col-md-6">
@@ -167,45 +200,50 @@ $total = $subtotal + $impuestos;
                                 <input type="text" name="telefono_contacto" class="form-control form-control-custom" placeholder="Ej: 3101234567" value="<?= htmlspecialchars($cliente['telefono'] ?? '') ?>" required>
                             </div>
                             <div class="col-12 col-md-6">
-                                <label class="form-label small fw-semibold text-muted">Ciudad / Municipio *</label>
-                                <input type="text" name="ciudad_envio" class="form-control form-control-custom" placeholder="Ej: Neiva, Huila" value="<?= htmlspecialchars($cliente['ciudad'] ?? '') ?>" required>
+                                <label class="form-label small fw-semibold text-muted">Lugar de Retiro</label>
+                                <input type="text" class="form-control form-control-custom bg-light text-muted" value="Mostrador de Tienda Física" readonly>
                             </div>
                             <div class="col-12">
-                                <label class="form-label small fw-semibold text-muted">Dirección Completa de Entrega *</label>
-                                <input type="text" name="direccion_envio" class="form-control form-control-custom" placeholder="Calle / Carrera / Número / Barrio o Punto de Referencia" value="<?= htmlspecialchars($cliente['direccion'] ?? '') ?>" required>
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label small fw-semibold text-muted">Instrucciones o Notas para la Entrega (Opcional)</label>
-                                <textarea name="notas" class="form-control form-control-custom" rows="2" placeholder="Ej: Dejar en portería, timbre 201, entregar en horas de la tarde..."></textarea>
+                                <label class="form-label small fw-semibold text-muted">Observaciones o Instrucciones para el Vendedor (Opcional)</label>
+                                <textarea name="notas" class="form-control form-control-custom" rows="2" placeholder="Ej: Confirmar compatibilidad con modelo 2022, alistar en caja 2..."></textarea>
                             </div>
                         </div>
                     </div>
 
-                    <!-- 2. Método de Pago -->
+                    <!-- 2. Forma de Pago en Caja -->
                     <div class="checkout-card">
                         <h4 class="checkout-title">
                             <span class="badge bg-primary rounded-circle" style="width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center;">2</span>
-                            Método de Pago
+                            Forma de Pago en la Caja del Establecimiento
                         </h4>
 
-                        <p class="text-muted small mb-3">Selecciona cómo deseas cancelar tu pedido. De acuerdo a la infraestructura actual, no se solicitan datos bancarios directos.</p>
+                        <p class="text-muted small mb-3">Indica cómo prefieres pagar al momento de acercarte a la caja:</p>
 
                         <div class="row g-3">
                             <div class="col-12">
                                 <label class="payment-option-card selected" id="optCash">
-                                    <input type="radio" name="metodo_pago" value="Contra Entrega" checked class="form-check-input mt-0 me-2">
+                                    <input type="radio" name="metodo_pago" value="Efectivo en Caja" checked class="form-check-input mt-0 me-2">
                                     <div>
-                                        <div class="fw-bold text-dark"><i class="fa-solid fa-money-bill-wave text-success me-2"></i>Pago Contra Entrega (Efectivo al recibir)</div>
-                                        <span class="text-muted small">Pagas en efectivo al transportador cuando el repuesto llegue a tu dirección.</span>
+                                        <div class="fw-bold text-dark"><i class="fa-solid fa-money-bill-wave text-success me-2"></i>Pago en Efectivo en Caja</div>
+                                        <span class="text-muted small">Pagas en efectivo en la caja principal de la tienda al momento de retirar tus repuestos.</span>
+                                    </div>
+                                </label>
+                            </div>
+                            <div class="col-12">
+                                <label class="payment-option-card" id="optDatafono">
+                                    <input type="radio" name="metodo_pago" value="Tarjeta / Datáfono en Caja" class="form-check-input mt-0 me-2">
+                                    <div>
+                                        <div class="fw-bold text-dark"><i class="fa-solid fa-credit-card text-primary me-2"></i>Tarjeta Débito o Crédito (Datáfono en Caja)</div>
+                                        <span class="text-muted small">Pagas con tu tarjeta en el datáfono físico de la caja del establecimiento.</span>
                                     </div>
                                 </label>
                             </div>
                             <div class="col-12">
                                 <label class="payment-option-card" id="optTransfer">
-                                    <input type="radio" name="metodo_pago" value="Transferencia Contraentrega" class="form-check-input mt-0 me-2">
+                                    <input type="radio" name="metodo_pago" value="Transferencia / QR en Caja" class="form-check-input mt-0 me-2">
                                     <div>
-                                        <div class="fw-bold text-dark"><i class="fa-solid fa-mobile-screen-button text-primary me-2"></i>Transferencia Digital al recibir (Nequi / Bancolombia)</div>
-                                        <span class="text-muted small">Puedes transferir por Nequi o Bancolombia en el momento exacto en que te entreguen el paquete.</span>
+                                        <div class="fw-bold text-dark"><i class="fa-solid fa-qrcode text-secondary me-2"></i>Transferencia o QR en Caja (Nequi / Bancolombia)</div>
+                                        <span class="text-muted small">Escaneas el código QR oficial de la tienda en el punto de pago.</span>
                                     </div>
                                 </label>
                             </div>
@@ -252,22 +290,22 @@ $total = $subtotal + $impuestos;
                                 <span class="fw-semibold text-dark">$<?= number_format($impuestos, 0, ',', '.') ?></span>
                             </div>
                             <div class="d-flex justify-content-between text-muted small mb-2">
-                                <span>Envío:</span>
-                                <span class="text-success fw-semibold">Gratis</span>
+                                <span>Entrega:</span>
+                                <span class="text-primary fw-semibold"><i class="fa-solid fa-store me-1"></i> Retiro en Mostrador</span>
                             </div>
                             <div class="d-flex justify-content-between align-items-center pt-2 border-top">
-                                <span class="fw-bold text-dark fs-5">Total a Pagar:</span>
+                                <span class="fw-bold text-dark fs-5">Total a Pagar en Caja:</span>
                                 <span class="fw-bold text-primary fs-4">$<?= number_format($total, 0, ',', '.') ?></span>
                             </div>
                         </div>
 
                         <!-- Botón de Confirmación -->
-                        <button type="submit" id="btnConfirmOrder" class="btn btn-success btn-lg w-100 rounded-pill py-3 fw-bold d-flex align-items-center justify-content-center gap-2 shadow-sm mb-3">
-                            <i class="fa-solid fa-check-circle"></i> Confirmar y Realizar Pedido
+                        <button type="submit" id="btnConfirmOrder" class="btn btn-primary btn-lg w-100 rounded-pill py-3 fw-bold d-flex align-items-center justify-content-center gap-2 shadow-sm mb-3" style="background: #004ba8; border: none;">
+                            <i class="fa-solid fa-paper-plane"></i> Confirmar Pedido y Alistar en Bodega
                         </button>
 
                         <div class="text-center text-muted small">
-                            <i class="fa-solid fa-shield-halved text-success me-1"></i> Transacción segura y protegida en Motoverify
+                            <i class="fa-solid fa-cash-register text-success me-1"></i> Pago y retiro presencial directo en el establecimiento
                         </div>
                     </div>
                 </div>
@@ -292,7 +330,7 @@ $total = $subtotal + $impuestos;
 
         const btn = document.getElementById('btnConfirmOrder');
         btn.disabled = true;
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Procesando pedido...';
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Enviando pedido al vendedor...';
 
         const formData = new FormData(this);
         const data = {
@@ -314,10 +352,10 @@ $total = $subtotal + $impuestos;
             if (resData.status === 'success') {
                 Swal.fire({
                     icon: 'success',
-                    title: '¡Pedido Registrado!',
+                    title: '¡Pedido Enviado al Vendedor!',
                     text: resData.message,
                     confirmButtonColor: '#004ba8',
-                    confirmButtonText: 'Ver Detalle del Pedido',
+                    confirmButtonText: 'Ver Estado del Pedido',
                     allowOutsideClick: false
                 }).then(() => {
                     const targetUrl = resData.id_venta ? ('detalle_compra.php?id=' + resData.id_venta) : (resData.redirect || 'historial_compras.php');
@@ -325,7 +363,7 @@ $total = $subtotal + $impuestos;
                 });
             } else {
                 btn.disabled = false;
-                btn.innerHTML = '<i class="fa-solid fa-check-circle me-1"></i> Confirmar y Realizar Pedido';
+                btn.innerHTML = '<i class="fa-solid fa-paper-plane me-1"></i> Confirmar y Enviar Pedido al Vendedor';
                 Swal.fire({
                     icon: 'error',
                     title: 'No se pudo procesar',
@@ -335,7 +373,7 @@ $total = $subtotal + $impuestos;
         })
         .catch(err => {
             btn.disabled = false;
-            btn.innerHTML = '<i class="fa-solid fa-check-circle me-1"></i> Confirmar y Realizar Pedido';
+            btn.innerHTML = '<i class="fa-solid fa-paper-plane me-1"></i> Confirmar y Enviar Pedido al Vendedor';
             Swal.fire({ icon: 'error', title: 'Error', text: 'Error de conexión con el servidor.' });
         });
     });

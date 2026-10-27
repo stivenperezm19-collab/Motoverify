@@ -221,7 +221,7 @@ if ($resRel) {
                                         <i class="fa-solid fa-cart-plus"></i> Añadir al Carrito
                                     </button>
                                     <button type="button" class="btn btn-success btn-lg rounded-pill px-4 d-flex align-items-center gap-2 fw-semibold shadow-sm" id="btnBuyNow">
-                                        <i class="fa-solid fa-bolt"></i> Comprar Ahora
+                                        <i class="fa-solid fa-clipboard-check"></i> Solicitar Pedido
                                     </button>
                                 </div>
                             <?php else: ?>
@@ -236,7 +236,7 @@ if ($resRel) {
                                         </span>
                                     </div>
                                     <h6 class="fw-bold text-dark mb-1">Inicia sesión para ordenar este repuesto</h6>
-                                    <p class="text-muted small mb-3">Para realizar pedidos, seleccionar métodos de entrega y recibir despacho en tiempo real, accede con tu cuenta o crea una nueva.</p>
+                                    <p class="text-muted small mb-3">Para solicitar pedidos, alistarlos en bodega y pagar en la caja del establecimiento, accede con tu cuenta o crea una nueva.</p>
                                     <div class="d-flex flex-wrap gap-2">
                                         <a href="../../public/index.php?login=1" class="btn btn-primary fw-semibold rounded-pill px-4 py-2 d-inline-flex align-items-center gap-2 shadow-sm" style="background: #004ba8; border: none;">
                                             <i class="fa-solid fa-arrow-right-to-bracket"></i> Iniciar Sesión
